@@ -1,0 +1,326 @@
+// Глобальные текстдравы
+new Text:Speed_TD[21];
+
+Speed_TD[0] = TextDrawCreate(494.6632, 362.5678, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[0], 119.3600, 58.4099);
+TextDrawAlignment(Speed_TD[0], 1);
+TextDrawColor(Speed_TD[0], 437918463);
+TextDrawBackgroundColor(Speed_TD[0], 255);
+TextDrawFont(Speed_TD[0], 4);
+TextDrawSetProportional(Speed_TD[0], 0);
+TextDrawSetShadow(Speed_TD[0], 0);
+
+Speed_TD[1] = TextDrawCreate(492.0834, 411.3027, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[1], 16.0000, 18.0000);
+TextDrawAlignment(Speed_TD[1], 1);
+TextDrawColor(Speed_TD[1], 437918463);
+TextDrawBackgroundColor(Speed_TD[1], 255);
+TextDrawFont(Speed_TD[1], 4);
+TextDrawSetProportional(Speed_TD[1], 0);
+TextDrawSetShadow(Speed_TD[1], 0);
+
+Speed_TD[2] = TextDrawCreate(492.0834, 354.0190, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[2], 16.0000, 18.0000);
+TextDrawAlignment(Speed_TD[2], 1);
+TextDrawColor(Speed_TD[2], 437918463);
+TextDrawBackgroundColor(Speed_TD[2], 255);
+TextDrawFont(Speed_TD[2], 4);
+TextDrawSetProportional(Speed_TD[2], 0);
+TextDrawSetShadow(Speed_TD[2], 0);
+
+Speed_TD[3] = TextDrawCreate(600.6911, 354.1188, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[3], 16.0000, 18.0000);
+TextDrawAlignment(Speed_TD[3], 1);
+TextDrawColor(Speed_TD[3], 437918463);
+TextDrawBackgroundColor(Speed_TD[3], 255);
+TextDrawFont(Speed_TD[3], 4);
+TextDrawSetProportional(Speed_TD[3], 0);
+TextDrawSetShadow(Speed_TD[3], 0);
+
+Speed_TD[4] = TextDrawCreate(600.6911, 411.0028, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[4], 16.0000, 18.0000);
+TextDrawAlignment(Speed_TD[4], 1);
+TextDrawColor(Speed_TD[4], 437918463);
+TextDrawBackgroundColor(Speed_TD[4], 255);
+TextDrawFont(Speed_TD[4], 4);
+TextDrawSetProportional(Speed_TD[4], 0);
+TextDrawSetShadow(Speed_TD[4], 0);
+
+Speed_TD[5] = TextDrawCreate(556.8726, 379.5845, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[5], 7.0000, 8.0000);
+TextDrawAlignment(Speed_TD[5], 1);
+TextDrawColor(Speed_TD[5], 255);
+TextDrawBackgroundColor(Speed_TD[5], 255);
+TextDrawFont(Speed_TD[5], 4);
+TextDrawSetProportional(Speed_TD[5], 0);
+TextDrawSetShadow(Speed_TD[5], 0);
+
+Speed_TD[6] = TextDrawCreate(500.0327, 365.6141, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[6], 110.0000, -8.7299);
+TextDrawAlignment(Speed_TD[6], 1);
+TextDrawColor(Speed_TD[6], 437918463);
+TextDrawBackgroundColor(Speed_TD[6], 255);
+TextDrawFont(Speed_TD[6], 4);
+TextDrawSetProportional(Speed_TD[6], 0);
+TextDrawSetShadow(Speed_TD[6], 0);
+
+Speed_TD[7] = TextDrawCreate(499.0747, 426.1195, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[7], 110.0000, -9.0000);
+TextDrawAlignment(Speed_TD[7], 1);
+TextDrawColor(Speed_TD[7], 437918463);
+TextDrawBackgroundColor(Speed_TD[7], 255);
+TextDrawFont(Speed_TD[7], 4);
+TextDrawSetProportional(Speed_TD[7], 0);
+TextDrawSetShadow(Speed_TD[7], 0);
+
+Speed_TD[8] = TextDrawCreate(494.6105, 363.6917, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[8], 119.7601, 1.0000);
+TextDrawAlignment(Speed_TD[8], 1);
+TextDrawColor(Speed_TD[8], 8388863);
+TextDrawBackgroundColor(Speed_TD[8], 255);
+TextDrawFont(Speed_TD[8], 4);
+TextDrawSetProportional(Speed_TD[8], 0);
+TextDrawSetShadow(Speed_TD[8], 0);
+
+Speed_TD[9] = TextDrawCreate(494.4631, 403.3265, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[9], 119.7601, 1.0000);
+TextDrawAlignment(Speed_TD[9], 1);
+TextDrawColor(Speed_TD[9], 8388863);
+TextDrawBackgroundColor(Speed_TD[9], 255);
+TextDrawFont(Speed_TD[9], 4);
+TextDrawSetProportional(Speed_TD[9], 0);
+TextDrawSetShadow(Speed_TD[9], 0);
+
+Speed_TD[10] = TextDrawCreate(489.4512, 354.1459, "LD_beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[10], 50.0000, 60.0000);
+TextDrawAlignment(Speed_TD[10], 1);
+TextDrawColor(Speed_TD[10], 8388863);
+TextDrawBackgroundColor(Speed_TD[10], 255);
+TextDrawFont(Speed_TD[10], 4);
+TextDrawSetProportional(Speed_TD[10], 0);
+TextDrawSetShadow(Speed_TD[10], 0);
+
+Speed_TD[11] = TextDrawCreate(490.8514, 356.2460, "LD_beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[11], 47.0000, 56.0000);
+TextDrawAlignment(Speed_TD[11], 1);
+TextDrawColor(Speed_TD[11], 437918463);
+TextDrawBackgroundColor(Speed_TD[11], 255);
+TextDrawFont(Speed_TD[11], 4);
+TextDrawSetProportional(Speed_TD[11], 0);
+TextDrawSetShadow(Speed_TD[11], 0);
+
+Speed_TD[12] = TextDrawCreate(514.4041, 386.5187, "kЇ/¤"); // пусто
+TextDrawLetterSize(Speed_TD[12], 0.1544, 1.0937);
+TextDrawAlignment(Speed_TD[12], 2);
+TextDrawColor(Speed_TD[12], 8388863);
+TextDrawBackgroundColor(Speed_TD[12], -239);
+TextDrawFont(Speed_TD[12], 2);
+TextDrawSetProportional(Speed_TD[12], 1);
+TextDrawSetShadow(Speed_TD[12], 0);
+
+Speed_TD[13] = TextDrawCreate(532.8668, 367.0917, "ENGINE"); // пусто
+TextDrawLetterSize(Speed_TD[13], 0.1624, 0.9771);
+TextDrawAlignment(Speed_TD[13], 1);
+TextDrawColor(Speed_TD[13], -1061109505);
+TextDrawBackgroundColor(Speed_TD[13], 255);
+TextDrawFont(Speed_TD[13], 2);
+TextDrawSetProportional(Speed_TD[13], 1);
+TextDrawSetShadow(Speed_TD[13], 0);
+
+Speed_TD[14] = TextDrawCreate(532.8668, 378.8923, "DOORS"); // пусто
+TextDrawLetterSize(Speed_TD[14], 0.1624, 0.9771);
+TextDrawAlignment(Speed_TD[14], 1);
+TextDrawColor(Speed_TD[14], -1061109505);
+TextDrawBackgroundColor(Speed_TD[14], 255);
+TextDrawFont(Speed_TD[14], 2);
+TextDrawSetProportional(Speed_TD[14], 1);
+TextDrawSetShadow(Speed_TD[14], 0);
+
+Speed_TD[15] = TextDrawCreate(556.8726, 367.9837, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[15], 7.0000, 8.0000);
+TextDrawAlignment(Speed_TD[15], 1);
+TextDrawColor(Speed_TD[15], 255);
+TextDrawBackgroundColor(Speed_TD[15], 255);
+TextDrawFont(Speed_TD[15], 4);
+TextDrawSetProportional(Speed_TD[15], 0);
+TextDrawSetShadow(Speed_TD[15], 0);
+
+Speed_TD[16] = TextDrawCreate(557.0200, 392.2926, "LD_Beat:Chit"); // пусто
+TextDrawTextSize(Speed_TD[16], 7.0000, 8.0000);
+TextDrawAlignment(Speed_TD[16], 1);
+TextDrawColor(Speed_TD[16], 255);
+TextDrawBackgroundColor(Speed_TD[16], 255);
+TextDrawFont(Speed_TD[16], 4);
+TextDrawSetProportional(Speed_TD[16], 0);
+TextDrawSetShadow(Speed_TD[16], 0);
+
+Speed_TD[17] = TextDrawCreate(494.7633, 418.4783, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[17], 119.0000, 0.7498);
+TextDrawAlignment(Speed_TD[17], 1);
+TextDrawColor(Speed_TD[17], 8388863);
+TextDrawBackgroundColor(Speed_TD[17], 255);
+TextDrawFont(Speed_TD[17], 4);
+TextDrawSetProportional(Speed_TD[17], 0);
+TextDrawSetShadow(Speed_TD[17], 0);
+
+Speed_TD[18] = TextDrawCreate(613.7976, 364.2239, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[18], 0.5899, 55.0000);
+TextDrawAlignment(Speed_TD[18], 1);
+TextDrawColor(Speed_TD[18], 8388863);
+TextDrawBackgroundColor(Speed_TD[18], 255);
+TextDrawFont(Speed_TD[18], 4);
+TextDrawSetProportional(Speed_TD[18], 0);
+TextDrawSetShadow(Speed_TD[18], 0);
+
+Speed_TD[19] = TextDrawCreate(598.8170, 363.9591, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[19], 0.7099, 40.0000);
+TextDrawAlignment(Speed_TD[19], 1);
+TextDrawColor(Speed_TD[19], 8388863);
+TextDrawBackgroundColor(Speed_TD[19], 255);
+TextDrawFont(Speed_TD[19], 4);
+TextDrawSetProportional(Speed_TD[19], 0);
+TextDrawSetShadow(Speed_TD[19], 0);
+
+Speed_TD[20] = TextDrawCreate(494.3699, 363.9241, "LD_SPAC:white"); // пусто
+TextDrawTextSize(Speed_TD[20], 0.5899, 55.0000);
+TextDrawAlignment(Speed_TD[20], 1);
+TextDrawColor(Speed_TD[20], 8388863);
+TextDrawBackgroundColor(Speed_TD[20], 255);
+TextDrawFont(Speed_TD[20], 4);
+TextDrawSetProportional(Speed_TD[20], 0);
+TextDrawSetShadow(Speed_TD[20], 0);
+
+
+
+// Текстдравы для игроков
+new PlayerText:Speed_PTD[MAX_PLAYERS][14];
+
+Speed_PTD[playerid][0] = CreatePlayerTextDraw(playerid, 599.5925, 397.4620, "LD_SPAC:white"); // 8-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][0], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][0], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][0], -16776961);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][0], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][0], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][0], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][0], 0);
+
+Speed_PTD[playerid][1] = CreatePlayerTextDraw(playerid, 599.5925, 392.2619, "LD_SPAC:white"); // 7-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][1], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][1], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][1], -11992833);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][1], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][1], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][1], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][1], 0);
+
+Speed_PTD[playerid][2] = CreatePlayerTextDraw(playerid, 599.6925, 387.3616, "LD_SPAC:white"); // 6-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][2], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][2], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][2], -11009793);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][2], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][2], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][2], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][2], 0);
+
+Speed_PTD[playerid][3] = CreatePlayerTextDraw(playerid, 599.5925, 382.2611, "LD_SPAC:white"); // 5-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][3], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][3], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][3], -9633537);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][3], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][3], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][3], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][3], 0);
+
+Speed_PTD[playerid][4] = CreatePlayerTextDraw(playerid, 599.5925, 376.9609, "LD_SPAC:white"); // 4-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][4], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][4], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][4], -6946561);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][4], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][4], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][4], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][4], 0);
+
+Speed_PTD[playerid][5] = CreatePlayerTextDraw(playerid, 599.6925, 372.2607, "LD_SPAC:white"); // 3-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][5], 14.0500, 6.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][5], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][5], -4587265);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][5], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][5], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][5], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][5], 0);
+
+Speed_PTD[playerid][6] = CreatePlayerTextDraw(playerid, 599.3925, 369.2604, "LD_SPAC:white"); // 2-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][6], 14.3199, 4.0000);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][6], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][6], -65281);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][6], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][6], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][6], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][6], 0);
+
+Speed_PTD[playerid][7] = CreatePlayerTextDraw(playerid, 558.3726, 381.1845, "LD_Beat:Chit"); // Статус дверей
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][7], 4.1599, 4.8797);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][7], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][7], -347323649);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][7], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][7], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][7], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][7], 0);
+
+Speed_PTD[playerid][8] = CreatePlayerTextDraw(playerid, 514.7515, 369.2214, "100"); // пусто
+PlayerTextDrawLetterSize(playerid, Speed_PTD[playerid][8], 0.3953, 2.1881);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][8], 2);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][8], 8388863);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][8], -239);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][8], 1);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][8], 1);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][8], 0);
+
+Speed_PTD[playerid][9] = CreatePlayerTextDraw(playerid, 532.8668, 390.5931, "MAX"); // пусто
+PlayerTextDrawLetterSize(playerid, Speed_PTD[playerid][9], 0.1484, 1.0980);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][9], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][9], -1061109505);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][9], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][9], 2);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][9], 1);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][9], 0);
+
+Speed_PTD[playerid][10] = CreatePlayerTextDraw(playerid, 558.5202, 393.8927, "LD_Beat:Chit"); // Статус ограничителя
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][10], 4.1599, 4.8797);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][10], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][10], -347323649);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][10], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][10], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][10], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][10], 0);
+
+Speed_PTD[playerid][11] = CreatePlayerTextDraw(playerid, 558.3726, 369.4837, "LD_Beat:Chit"); // Статус двигателя
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][11], 4.1599, 4.8797);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][11], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][11], -347323649);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][11], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][11], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][11], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][11], 0);
+
+Speed_PTD[playerid][12] = CreatePlayerTextDraw(playerid, 554.7562, 405.7373, "LANDSTALKER"); // пусто
+PlayerTextDrawLetterSize(playerid, Speed_PTD[playerid][12], 0.1668, 1.1368);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][12], 2);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][12], -1061109505);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][12], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][12], 2);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][12], 1);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][12], 0);
+
+Speed_PTD[playerid][13] = CreatePlayerTextDraw(playerid, 599.4942, 364.6184, "LD_SPAC:white"); // 1-ый уровень бензина
+PlayerTextDrawTextSize(playerid, Speed_PTD[playerid][13], 14.1198, 4.3800);
+PlayerTextDrawAlignment(playerid, Speed_PTD[playerid][13], 1);
+PlayerTextDrawColor(playerid, Speed_PTD[playerid][13], 16711935);
+PlayerTextDrawBackgroundColor(playerid, Speed_PTD[playerid][13], 255);
+PlayerTextDrawFont(playerid, Speed_PTD[playerid][13], 4);
+PlayerTextDrawSetProportional(playerid, Speed_PTD[playerid][13], 0);
+PlayerTextDrawSetShadow(playerid, Speed_PTD[playerid][13], 0);
+
+
+
+// Экспортировано 35 текстдравов.
