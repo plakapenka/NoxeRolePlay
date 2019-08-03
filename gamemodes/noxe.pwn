@@ -26,7 +26,7 @@ native IsValidVehicle(vehicleid);
 #include "../source/maps/fbr.inc"
 #include "../source/maps/house_int_1.inc"
 
-#pragma dynamic 15000
+#pragma dynamic 16000
 #pragma warning disable 239
 
 new bool:gPlayerAnimLibsPreloaded[MAX_PLAYERS];
@@ -15482,6 +15482,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						SetPlayerInterior(playerid,0);
 						SetPlayerVirtualWorld(playerid,0);
 						SetPlayerPos(playerid,HouseInfo[i][hEntrancex],HouseInfo[i][hEntrancey],HouseInfo[i][hEntrancez]);
+						SetPVarInt(playerid, "no_need_area", 1);
 						return 1;
 					}
 					case 1:
