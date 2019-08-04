@@ -151,7 +151,7 @@ new     	MySQL:DATABASE;
 #define 	TABLE_HOUSE     		"house"
 #define 	TABLE_KVARTIRS  		"kvart"
 #define 	TABLE_PODEZDS  			"podezd"
-#define 	TABLE_ATM       		"atm"
+
 #define 	TABLE_BAN       		"banlog"
 #define 	TABLE_DONATE    		"donate"
 #define 	TABLE_FARM      		"farms"
@@ -286,6 +286,19 @@ stock SetWeatherEx(const weatherid)
 new pravila_pick;
 //Радио 
 new taxi_park_car[6];
+// ======== банкоматы
+new Float:atm_cords[][] = {
+	{1142.4000200,-1764.1999500,13.5000000,180.0}, 		// бомж респа 1 лвл
+	{-2033.5000000,159.6000100,28.9000000,180.0}, 		// заправка возле респы в сф
+	{-2035.5999800,-102.5000000,35.1000000, 270.0}, 	// Автошкола
+	{2854.3000500,1286.0000000,11.3000000, 270.0} 		// АВ ЛВ
+};
+
+new Text3D:atm_text[2];          // Текст подсказка над банкоматами
+new timeATM;                	 // Время для обновления 3д текста
+new atm_area[2];          		 // зона действия банкомата штоооооооооооо
+
+
 //============ интерьеры домов
 #define house_int_count 38
 
@@ -3439,17 +3452,7 @@ new ChangeSkin[MAX_PLAYERS];// Выбор скина
 
 new rob;
 
-enum atm
-{
-	aid,
-	Float:aX,
-	Float:aY,
-	Float:aZ,
-	Float:arZ
-};
-new ATMInfo[100][atm], TOTALATM = 0;
-new ATM[100];
-new Text3D:LABELATM[100], bool:LABELATM_;
+
 enum wInfo
 {
 	wID,
@@ -8528,38 +8531,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			DeletePVar(playerid,"bizz");
 			return true;
 		}
-	case 1883:
-		{
-			if(!response) return ShowPlayerDialog(playerid, 1884, DIALOG_STYLE_MSGBOX, "Банкоматы", "Установить объект на данное место?", "Да", "Нет");
-			return EditDynamicObject(playerid,GetPVarInt(playerid,"st_object"));
-		}
-	case 1884:
-		{
-			if(!response)
-			{
-				DestroyDynamicObject(GetPVarInt(playerid,"st_object"));
-				DeletePVar(playerid,"st_object");
-				SCM(playerid,COLOR_RED," Банкомат не был установлен!");
-			}
-			else
-			{
-				new Float:x, Float:y, Float:z, Float:rz;
-				GetDynamicObjectPos(GetPVarInt(playerid,"st_object"),x,y,z);
-				GetDynamicObjectRot(GetPVarInt(playerid,"st_object"), rz, rz, rz);
-				DeletePVar(playerid,"st_object");
-				ATMInfo[TOTALATM][aX] = x;
-				ATMInfo[TOTALATM][aY] = y;
-				ATMInfo[TOTALATM][aZ] = z;
-				ATMInfo[TOTALATM][arZ] = rz;
 
-				new szQuery[156];
-				mysql_format(DATABASE, szQuery, sizeof(szQuery), "INSERT INTO `"TABLE_ATM"` (`aX`, `aY`, `aZ`, `arZ`) VALUES ('%f', '%f', '%f', '%f')",x, y, z, rz);
-				mysql_query(DATABASE, szQuery);
-				TOTALATM++;
-				SendMes(playerid,COLOR_GREEN,"Банкомат под номером %i установлен!",TOTALATM);
-			}
-			return true;
-		}
 	case 1783:
 		{
 			if(!response) return ShowPlayerDialog(playerid, 1784, DIALOG_STYLE_MSGBOX, "Хот доги", "Установить объект на данное место?", "Да", "Нет");
@@ -19641,6 +19613,11 @@ publics: WheelTooo(idx)
 }
 public OnPlayerLeaveDynamicArea(playerid, areaid) 
 {
+	if(areaid >= atm_area[0] && areaid <= atm_area[1])
+	{
+		DeletePVar(playerid, "vozle_atm");
+		return 1;
+	}
 	if(areaid >= kvart_info[0][k_area] && areaid <= kvart_info[total_kvart-1][k_area])
 	{
 		if(GetPlayerVirtualWorld(playerid) < 50000)
@@ -19670,6 +19647,11 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 	if(GetPVarInt(playerid, "no_need_area"))
 	{
 		DeletePVar(playerid, "no_need_area");
+		return 1;
+	}
+	if(areaid >= atm_area[0] && areaid <= atm_area[1])
+	{
+		SetPVarInt(playerid, "vozle_atm", 1);
 		return 1;
 	}
 	if(areaid == pravila_pick)
@@ -21752,7 +21734,7 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 		}
 		return ShowPlayerDialog(playerid, 8998, 2, "Лифт", varv, "Перейти", "Закрыть");	
 	}
-	if(areaid >= BizzInfo[0][bExitPic] && areaid <= BizzInfo[TotalBizz][bExitPic])
+	if(areaid >= BizzInfo[1][bExitPic] && areaid <= BizzInfo[TotalBizz][bExitPic])
 	{
 		new biz = Streamer_GetIntData(STREAMER_TYPE_AREA,  areaid, E_STREAMER_EXTRA_ID);
 		SetPlayerInterior(playerid,0);
@@ -21761,7 +21743,7 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 		SetPVarInt(playerid, "no_need_area", 1);
 		return true;
 	}
-	if(areaid >= BizzInfo[0][bEnterPic] && areaid <= BizzInfo[TotalBizz][bEnterPic])
+	if(areaid >= BizzInfo[1][bEnterPic] && areaid <= BizzInfo[TotalBizz][bEnterPic])
 	{
 		new b = Streamer_GetIntData(STREAMER_TYPE_AREA,  areaid, E_STREAMER_EXTRA_ID);
 		if(strcmp(BizzInfo[b][bOwner],"None",true) == 0)
@@ -25388,6 +25370,16 @@ stock prorab_word()
 }
 publics: Fresh()
 {
+	//       банкоматы
+	timeATM ++;
+	if(timeATM == 7){
+		for(new Text3D:atmm = atm_text[0];atmm<atm_text[1];atmm++)UpdateDynamic3DTextLabelText(atmm, 0x33AAFFAA, "Введите: ''/atm''");
+	}
+	else if(timeATM == 14){
+		for(new Text3D:atmm = atm_text[0];atmm<atm_text[1];atmm++)UpdateDynamic3DTextLabelText(atmm, 0x33AA33AA, "Нажмите: ''ENTER''");
+		timeATM = 0;
+	}
+	// команда дневального лва
 	if(army_actor_time)
 	{
 		army_actor_time --;
@@ -25398,6 +25390,7 @@ publics: Fresh()
 			army_actor_text = Text3D:INVALID_3DTEXT_ID;
 		}
 	}
+	// орущий прораб
 	loader_actor_text_time --;
 	if(!loader_actor_text_time)
 	{
@@ -25426,20 +25419,6 @@ publics: Fresh()
 	
 	gettime(ServHour, ServMinute, ServSecond);
 	
-    if(ServSecond % 4 ) // обновление текста на банкомате
-    {
-        for(new i = 1; i <= TOTALATM; i++)
-		{
-			if(!LABELATM_) {
-				UpdateDynamic3DTextLabelText(LABELATM[i],COLOR_LIGHTBLUE," Введите: \"/ATM\"");
-				LABELATM_ = true;
-			}
-			else {
-				UpdateDynamic3DTextLabelText(LABELATM[i],0x00D900FF,"Нажмите: \"ENTER\"");
-				LABELATM_ = false;
-			}
-		}
-    }
 	if(ServSecond == 0) // время на спидометре
 	{
 		new strDateSpeed[25];
@@ -25472,7 +25451,7 @@ publics: Fresh()
 		for(new i = 1; i <= TOTALCASINO; i++) SaveMySQL(1,i);
 		for(new i = 1; i <= TOTALSHOPS; i++) SaveMySQL(3,i);
 		for(new i = 1; i <= TotalBizz; i++) SaveMySQL(4,i);
-		for(new i = 1; i <= TOTALATM; i++) SaveMySQL(8,i);
+
 		for(new i = 1; i <= TOTALFARM; i++) SaveMySQL(9,i);
 		foreach(new i: Player)
 		{
@@ -27007,21 +26986,21 @@ stock load_pickups()
 
 stock actors_load()
 {
-	new loader_actor = CreateActor(27, 2181.7244,-2252.5786,14.7734,224.1906);
+	new loader_actor = CreateActor(27, 2181.7244,-2252.5786,14.7734,224.1906); // прораб на мешка ( устройство на работу)
 	ApplyActorAnimation(loader_actor, "SMOKING", "M_smklean_loop", 4.1, 1, 0, 0, 1, 1);
 
-	loader_actor = CreateActor(27, 2121.7354,-2274.2668,20.6719, 181);
+	loader_actor = CreateActor(27, 2121.7354,-2274.2668,20.6719, 181); // прораб на мешках (кричащий)
 	ApplyActorAnimation(loader_actor, "PED", "SEAT_down",4.1, 0, 0, 1, 1, 1);
 
 	army_actor = CreateActor(287, 2531.4487,-1305.2017,2166.6021,95.0); // дневальный лва
 
-	new bank_actor = CreateActor(150, 1543.2639,-1223.1469,1388.3552,90.0); // актеры в банке на кассе
+	new bank_actor = CreateActor(150, 1543.2639,-1223.1469,1388.3552,90.0); // актеры в банке на кассе ls
 	ApplyActorAnimation(bank_actor, "PED", "SEAT_down",4.1, 0, 1, 1, 1, 1);
 	SetActorVirtualWorld(bank_actor, 36);
-	bank_actor = CreateActor(150, 1543.2281,-1225.5332,1388.3552,90.0); // актеры в банке на кассе
+	bank_actor = CreateActor(150, 1543.2281,-1225.5332,1388.3552,90.0); // актеры в банке на кассе ls
 	ApplyActorAnimation(bank_actor, "PED", "SEAT_down",4.1, 0, 1, 1, 1, 1);
 	SetActorVirtualWorld(bank_actor, 36);
-	bank_actor = CreateActor(150, 1543.2281,-1227.7133,1388.3552,90.0); // актеры в банке на кассе
+	bank_actor = CreateActor(150, 1543.2281,-1227.7133,1388.3552,90.0); // актеры в банке на кассе ls
 	ApplyActorAnimation(bank_actor, "PED", "SEAT_down",4.1, 0, 1, 1, 1, 1);
 	SetActorVirtualWorld(bank_actor, 36);
 
@@ -27034,6 +27013,32 @@ stock actors_load()
 	FortuneActor[2] = CreateActor(11, 1943.4309,987.9624,992.4688,274.9825);
 	SetActorVirtualWorld(FortuneActor[2], 1);
 }
+
+stock load_atm()
+{
+	for(new aa = 0; aa < sizeof atm_cords; aa++)
+	{
+		if(aa == 0) 
+		{
+			atm_text[0] = CreateDynamic3DTextLabel("Нажмите: ''ENTER''",0x33AA33AA, atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2]+1,5.0);
+			atm_area[0] = CreateDynamicSphere(atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2], 2.0);
+		}
+		else if(aa == sizeof(atm_cords)-1) 
+		{
+			atm_text[1] = CreateDynamic3DTextLabel("Нажмите: ''ENTER''",0x33AA33AA, atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2]+1,5.0);
+			atm_area[1] = CreateDynamicSphere(atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2], 2.0);
+		}
+		else
+		{
+			CreateDynamic3DTextLabel("Нажмите: ''ENTER''",0x33AA33AA, atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2]+1,5.0);
+			CreateDynamicSphere(atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2], 2.0);
+		}
+		
+		CreateDynamicObject(2754, atm_cords[aa][0], atm_cords[aa][1],atm_cords[aa][2], 0.0, 0.0, atm_cords[aa][3]);
+	}
+	
+}
+
 public OnGameModeInit()
 {	
 	Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT, 1000);
@@ -27052,7 +27057,7 @@ public OnGameModeInit()
 	WheelTimer[1] = -1;
 	WheelTimer[2] = -1;
 	////////////////////////
-	
+	load_atm();
 	Load_Anti_DM_Zone();
 	load_pickups();
     ServerTime();
@@ -27578,7 +27583,6 @@ public OnGameModeInit()
 	//===========
 	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_CASINO"`","OnMySQL_QUERY","iis",10,-1,"");
 	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_OTHERS"`","OnMySQL_QUERY","iis",0,-1,"");
-	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_ATM"`","OnMySQL_QUERY","iis",22,-1,"");
 	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_FARM"`","OnMySQL_QUERY","iis",28,-1,"");
 	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_STALL"`","OnMySQL_QUERY","iis",31,-1,"");
 	mysql_tquery(DATABASE,"SELECT * FROM `"TABLE_GANGZONE"`","OnMySQL_QUERY","iis",32,-1,"");
@@ -30023,7 +30027,6 @@ CMD:gmx(playerid, params[])
 	{
 		SaveMySQL(5,i);
 	}
-	for(new i = 1; i <= TOTALATM; i++) SaveMySQL(8,i);
 	for(new i = 1; i <= TOTALFARM; i++) SaveMySQL(9,i);
 	return true;
 }
@@ -33247,23 +33250,6 @@ CMD:addstall(playerid, params[])
 	else ShowPlayerDialog(playerid, 1783, DIALOG_STYLE_MSGBOX, "Хот доги", "Продолжить изменять положение объекта", "Да", "Нет");
 	return true;
 }
-CMD:addatm(playerid, params[])
-{
-	if(!pData[playerid][pLogin]) return true;
-	if(pData[playerid][pAdmin] < 10 || dostup[playerid] == 0) return true;
-	if(!GetPVarInt(playerid,"st_object"))
-	{
-		new Float: posX, Float: posY, Float: posZ;
-		AntiCheatGetPos(playerid, posX, posY, posZ);
-		new stobject = CreateDynamicObject(2754,posX,posY,posZ,0,0,0);
-		SetPVarInt(playerid,"st_object",stobject);
-		EditDynamicObject(playerid,stobject);
-		SCM(playerid,COLOR_GREEN,"Поставьте банкомат на нужное место. {ffffff}Для продолжения введите команду ещё раз");
-	}
-	else ShowPlayerDialog(playerid, 1883, DIALOG_STYLE_MSGBOX, "Банкоматы", "Продолжить изменять положение объекта", "Да", "Нет");
-	return true;
-}
-
 
 CMD:getip(playerid, params[])
 {
@@ -38722,12 +38708,11 @@ CMD:atm(playerid)
 		ShowPlayerDialog(playerid, 8900, DIALOG_STYLE_LIST, "ATM","[0] Пополнить счет\n[1] Снять со счета\n[2] Баланс\n[3] Оплатить квартплату", "Далее", "Выход");
 		return 1;
 	}
-	for(new i = 1; i <= TOTALATM; i++)
+	if(GetPVarInt(playerid, "vozle_atm") )
 	{
-		if(!IsPlayerInRangeOfPoint(playerid, 2.0,ATMInfo[i][aX],ATMInfo[i][aY],ATMInfo[i][aZ])) continue;
 		ClearAnim(playerid);
 		ShowPlayerDialog(playerid, 8900, DIALOG_STYLE_LIST, "ATM","[0] Пополнить счет\n[1] Снять со счета\n[2] Баланс\n[3] Оплатить квартплату", "Далее", "Выход");
-		break;
+		return 1;
 	}
 	return true;
 }
@@ -41197,11 +41182,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 			{
 				if(IsPlayerInVehicle(i, house_car[playerid]))
 				{
-					new her = GetPlayerVehicleSeat(i);
+					//new her = GetPlayerVehicleSeat(i);
 					SetPlayerInterior(i,0);
 					SetPlayerVirtualWorld(i,0);
-					SetPlayerPos(i,HouseInfo[house][hCarx], HouseInfo[house][hCary], HouseInfo[house][hCarz]);
-					PutPlayerInVehicle(i, house_car[playerid], her);
+					//SetPlayerPos(i,HouseInfo[house][hCarx], HouseInfo[house][hCary], HouseInfo[house][hCarz]);
+					//PutPlayerInVehicle(i, house_car[playerid], her);
 					SetPlayerWeather(i, ServWeather);
 					SetPlayerTime(i, ServHour,ServMinute);
 				}
@@ -41682,9 +41667,14 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	}
 	if(newkeys & KEY_SPRINT && newkeys & KEY_JUMP && pData[playerid][pState] != 2 && PlayerSpeed(playerid) >= 18 && GetPVarInt(playerid,"AntiBunny") < 1) ApplyAnimation(playerid,"PED","getup_front",6.0,0,0,0,0,0),SetPVarInt(playerid,"AntiBunny",2); // Anti Bunny
 	if((newkeys & 1 && !(oldkeys & 1)) && pData[playerid][pState] == PLAYER_STATE_DRIVER) cmd_slimit(playerid);
+
 	if(!(newkeys & KEY_SECONDARY_ATTACK) && oldkeys & KEY_SECONDARY_ATTACK)
 	{
-		if(!IsPlayerInAnyVehicle(playerid)) cmd_atm(playerid);
+		if(GetPVarInt(playerid, "vozle_atm") )
+		{
+			if(!IsPlayerInAnyVehicle(playerid)) cmd_atm(playerid);
+		}
+		
 	}
 	if(2 <= pData[playerid][pState] <= 3 && (newkeys & 2)) // окно открыть
 	{
@@ -45679,23 +45669,7 @@ publics: OnMySQL_QUERY(idx, playerid, str[])
 			cache_get_value_name(0,"pIpReg",szQuery);
 			SendMes(playerid,COLOR_BLUE," Ник: %s | IP при регистрации: %s",str,szQuery);
 		}
-	case 22:
-		{
-			if(!r) return printf("[Загрузка ...] Данные из Atm не получены!");
-			for(x = 1; x <= r; x++)
-			{
-				cache_get_value_index(x-1, 0, ATMInfo[x][aid]);
-				cache_get_value_index_float(x-1, 1, ATMInfo[x][aX]);
-				cache_get_value_index_float(x-1, 2, ATMInfo[x][aY]);
-				cache_get_value_index_float(x-1, 3, ATMInfo[x][aZ]);
-				cache_get_value_index_float(x-1, 4, ATMInfo[x][arZ]);
-				
-				ATM[x] = CreateDynamicObject(2754, ATMInfo[x][aX], ATMInfo[x][aY], ATMInfo[x][aZ], 0.0, 0.0, ATMInfo[x][arZ]);
-				LABELATM[x] = CreateDynamic3DTextLabel("Нажмите: 'ENTER'",0x00D900FF, ATMInfo[x][aX],ATMInfo[x][aY],ATMInfo[x][aZ]+1.1,10.0,-1,-1,0);
-				TOTALATM++;
-			}
-			printf("[Загрузка ...] Данные из Atm получены! (%i шт.)",TOTALATM);
-		}
+
 	case 23:
 		{
 			if(!r) return printf("[Аукцион СТО/Ферм] Нет аккаунта. Деньги не были зачислены!");
@@ -46410,13 +46384,6 @@ stock SaveMySQL(idx, i = 0)
 			format(temp,sizeof(temp)," WHERE bID = '%i'",BizzInfo[i][bID]),						strcat(szQuery,temp,sizeof(szQuery));
 			mysql_query(DATABASE, szQuery);
 			//printf("TABLE_BIZZ -> %s", szQuery);
-		}
-	case 8:
-		{
-			new szQuery[256];
-			mysql_format(DATABASE,szQuery, 255, "UPDATE "TABLE_ATM" SET `id` = '%i', `ax` = '%f', `ay` = '%f', `az` = '%f', `arz` = '%f' WHERE id = %i",
-			ATMInfo[i][aid], ATMInfo[i][aX],ATMInfo[i][aY],ATMInfo[i][aZ],ATMInfo[i][arZ], ATMInfo[i][aid]);
-			mysql_query(DATABASE, szQuery);
 		}
 	case 9:
 		{
