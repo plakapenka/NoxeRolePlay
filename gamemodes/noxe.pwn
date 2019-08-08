@@ -108,11 +108,11 @@ new unloadtimer[MAX_PLAYERS];
 new lcnpick[2];
 new PickNames[256],PickName[7][32],PickDate,PickTimes[128],PickTime[7], Pick = 0, PickLevel = 0;
 
-
 #define job_taxi 		0
 #define job_delivery 	1
 #define job_ugon 		2
 #define job_loader		3
+#define job_razvozchik  4
 
 //#define job_taxi 0
 
@@ -123,7 +123,7 @@ new PickNames[256],PickName[7][32],PickDate,PickTimes[128],PickTime[7], Pick = 0
 #define INVALID_KVARTIRA_KEY 78855
 #define TYPE_TAXI 1
 #define TYPE_RAZVOZ 2 
-#define pickup_load_veh_gruzchik 193
+#define pickup_load_veh_gruzchik -193
 #define SCM SendClientMessage
 #define SendMes(%0,%1,%2,%3) 		format(format_string, sizeof(format_string),%2,%3) && SCM(%0, %1, format_string)
 new 		format_string[144];
@@ -283,6 +283,8 @@ stock SetWeatherEx(const weatherid)
 	ServWeather = weatherid;
 	SetWeather(weatherid);
 }
+new prod_buy_pick[4];
+
 new pravila_pick;
 //Радио 
 new taxi_park_car[6];
@@ -507,6 +509,18 @@ enum delivery
 }
 new delivery_info[15][delivery];
 
+enum prodinf
+{
+	prod_biz_id,
+	prod_price,
+	prod_cnt
+};
+new prod_info[20][prodinf];
+
+#define price_buy_product_sklad 	"50"	// цена на складе за 50 ед. продукции
+#define price_buy_drink_sklad 		"60"	// цена на складе за 50 ед. продукции
+#define price_buy_fuel_sklad 		"40"	// цена на складе за 50 ед. продукции
+
 enum dCar
 {
 	Owner,
@@ -521,15 +535,33 @@ enum dCar
 new car_data[MAX_VEHICLES][dCar];
 
 new car_prods[MAX_VEHICLES][4];
+
 #define CAR_GRUZ_ZERNO	1
 #define CAR_GRUZ_NARKO	2
 #define CAR_GRUZ_MATS	3
 #define CAR_GRUZ_UROZAI	4
+#define CAR_GRUZ_PROD 	5
+#define CAR_GRUZ_DRINK 	6
+#define CAR_GRUZ_FUEL 	7
 
 new CarUnLockForPlayer[MAX_PLAYERS];
 
 
-
+stock gruz_name(type)
+{
+	new str_gruz_name[50];
+	switch(type)
+	{
+		case CAR_GRUZ_ZERNO: str_gruz_name 	= "Зерно";
+		case CAR_GRUZ_NARKO: str_gruz_name 	= "Наркотики";
+		case CAR_GRUZ_MATS: str_gruz_name 	= "Материалы";
+		case CAR_GRUZ_UROZAI: str_gruz_name = "Урожай";
+		case CAR_GRUZ_PROD: str_gruz_name 	= "Продукты";
+		case CAR_GRUZ_DRINK: str_gruz_name 	= "Алкоголь";
+		case CAR_GRUZ_FUEL: str_gruz_name 	= "Топливо";
+	}
+	return str_gruz_name;
+}
 stock CreateVehicle_R(modelid, Float:x, Float:y, Float:z, Float:angle, color1, color2, respawn_delay, addsiren = 0)
 {
 	if(INVALID_VEHICLE_ID != (vid = CreateVehicle(modelid, x, y, z, angle, color1, color2, respawn_delay, addsiren)))
@@ -4116,15 +4148,6 @@ enum painfo
 	paDeaths,
 };
 new PaintStats[15][painfo], Painlist = 0;
-enum cainfo
-{
-Float:callx,
-Float:cally,
-Float:callz,
-	callused,
-};
-new CallInfo[MAX_PLAYERS][cainfo];
-
 
 //////////////////////////////
 publics: ConvoiToPlayer(playerid)
@@ -5507,12 +5530,7 @@ stock IsAtTPlace(playerid)
 	else if(PlayerToPoint(10.0,playerid,-1731.4509,118.9413,3.5547)) return 8;
 	return false;
 }
-stock IsAtBPlace(playerid)
-{
-	if(PlayerToPoint(7.0,playerid,-1027.4069,-593.4584,32.0126)) return true;
-	else if(PlayerToPoint(7.0,playerid,-514.4622,-543.0626,25.5234)) return 2;
-	return false;
-}
+
 stock IsAtTTPlace(playerid)
 {
 	if(IsPlayerInRangeOfPoint(playerid,10.0,2601.7222,-2226.5867,13.3732)) return true;
@@ -6001,7 +6019,6 @@ stock ResetNew(playerid)
 	pData[playerid][pAdmin] = 0;
 	pData[playerid][pHelper] = 0;
 	tipster[playerid] = 0;
-	CallInfo[playerid][callused] = 0;
 	tipsterlisten[playerid] = 0;
 	ResetPlayerWeaponEx(playerid);
 	recognition[playerid] = 0;
@@ -6697,6 +6714,40 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 	switch(dialogid)
 	{
+		case 126:
+		{
+			if(!response)
+			{
+				DeletePVar(playerid, "cnt_buy_prod");
+				return 1;
+			}
+			SendMes(playerid,0x009688FF, "Вы купили {ffffff}%d{009688} ед. Подгоните машину к боксу для загрузки",GetPVarInt(playerid, "cnt_buy_prod"));
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[0]))SetPlayerRaceCheckpoint(playerid, 1, -536.1934,-545.5959,25.5234, 0.0, 0.0, 0.0, 5.0);
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[1]))SetPlayerRaceCheckpoint(playerid, 1, -54.9860,-224.0497,5.1385, 0.0, 0.0, 0.0, 5.0);
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[2]))SetPlayerRaceCheckpoint(playerid, 1, -1034.1521,-682.8360,31.7202, 0.0, 0.0, 0.0, 5.0);
+			
+			return 1;
+		}
+		case 125:
+		{
+			if(!response)return 1;
+			new delivery_str[200];
+			new type_price;
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[0])) type_price = strval(price_buy_product_sklad);
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[1])) type_price = strval(price_buy_drink_sklad);
+			if(IsPlayerInDynamicArea(playerid, prod_buy_pick[2])) type_price = strval(price_buy_fuel_sklad);
+
+			new price = floatround( (strval(inputtext)/50)*type_price );
+			new skidka = (price/100)* job_lvl(pData[playerid][job_skill][job_razvozchik]);
+		
+
+			SetPVarInt(playerid, "cnt_buy_prod", strval(inputtext));
+			
+			format(delivery_str, sizeof delivery_str, "{80cbc4}Количество:{ffffff} %d\n\n{80cbc4}Наименование: {ffffff}%s\n{80cbc4}Стоимость: {ffffff}%d\n{80cbc4}Ваша скидка: {ffffff}%d{80cbc4} вирт",strval(inputtext),gruz_name(GetPVarInt(playerid, "prod_buy_type")),price-skidka,skidka );
+			ShowPlayerDialog(playerid,126,DIALOG_STYLE_MSGBOX,"Информация о заказе",delivery_str ,"Оплатить","Отмена");
+			return 1;
+		}
+
 		case 8998: // Выход с подъезда
 		{
 			if(!response) return 1;
@@ -8265,27 +8316,100 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			case 1..5: GPS_ON(playerid, FarmInfo[listitem][fMenu][0], FarmInfo[listitem][fMenu][1], FarmInfo[listitem][fMenu][2]);
 			}
 		}
+		case 1320:
+		{
+			if(!response)
+			{
+				new vehid = GetPlayerVehicleID(playerid);
+				car_data[vehid][car_gruz] = 0;
+				car_data[vehid][car_gruz_type] = 0;
+				SendMes(playerid, 0x0097a7FF, "Вы выбросили весь товар. Загруженность машины 0/%d",car_data[vehid][car_limit_gruz]);
+			}
+			return 1;
+		}
 		case 1321:
 		{
 			if(!response)return 1;
 			if(listitem == 0)
 			{
-			//	new str_prod[100];
-				//format(str_prod, sizeof str_prod, "{ffffff}Загруженность: {8d6e63}%d{ffffff}/{8d6e63}%d{ffffff}\n",)
+				new str_prod[100];
+				new vehid = GetPlayerVehicleID(playerid);
+				format(str_prod, sizeof str_prod, "{8d6e63}Загруженность: {ffffff}%d{8d6e63}/{ffffff}%d{8d6e63}\n\nГруз:{ffffff} %s",car_data[vehid][car_gruz],car_data[vehid][car_limit_gruz],gruz_name(car_data[vehid][car_gruz_type]));
+				ShowPlayerDialog(playerid, 1320, DIALOG_STYLE_MSGBOX, "Багажник", str_prod, "Закрыть", "Выбросить");
+				return 1;
 			}
 			if(listitem == 1)
 			{
-				ShowPlayerDialog(playerid, 1322, DIALOG_STYLE_LIST, "Развозка продуктов", "Покупка зерна\nПродажа зерна\nПокупка урожая\nПродажа урожая", "Выбрать", "Отмена");
+				ShowPlayerDialog(playerid, 1322, DIALOG_STYLE_LIST, "Меню развозчика > Зерно и урожай", "Покупка зерна\nПродажа зерна\nПокупка урожая\nПродажа урожая", "Выбрать", "Отмена");
+				return 1;
+			}
+			if(listitem == 2) return cmd_plist(playerid);
+			if(listitem == 3)
+			{
+				new vehid = GetPlayerVehicleID(playerid);
+				if(car_data[vehid][car_gruz] <= 0)
+					return SendClientMessage(playerid, 0xe53935FF, "Ваша машина пуста. Используйте /gps и купите товары на складе!");
+
+				for(new ff = 0; ff < sizeof prod_info-1; ff++)
+				{
+					if(prod_info[ff][prod_cnt]) 
+					{
+						new bizid = prod_info[ff][prod_biz_id];
+						if(IsPlayerInRangeOfPoint(playerid, 10, BizzInfo[bizid][bEntranceX], BizzInfo[bizid][bEntranceY], BizzInfo[bizid][bEntranceZ]))
+						{
+							new price_prod;
+							if(car_data[vehid][car_gruz_type] == CAR_GRUZ_PROD) 	price_prod = strval(price_buy_product_sklad);
+							if(car_data[vehid][car_gruz_type] == CAR_GRUZ_DRINK)	price_prod = strval(price_buy_drink_sklad);
+							if(car_data[vehid][car_gruz_type] == CAR_GRUZ_FUEL)		price_prod = strval(price_buy_fuel_sklad);
+
+							if(prod_info[ff][prod_cnt] < car_data[vehid][car_gruz])
+							{
+								car_data[vehid][car_gruz] -= prod_info[ff][prod_cnt];
+								SendMes(playerid,0x009688FF,"Вы продали {ffffff}%d {009688}ед. продукции. Заработано: {ffffff}%d {009688}вирт",prod_info[ff][prod_cnt], floatround( (prod_info[ff][prod_cnt]/50)*price_prod )   );
+								prod_info[ff][prod_cnt] = 0;
+							}
+							else
+							{
+								prod_info[ff][prod_cnt] -= car_data[vehid][car_gruz];
+								SendMes(playerid,0x009688FF,"Вы продали {ffffff}%d {009688}ед. продукции. Заработано: {ffffff}%d {009688}вирт",car_data[vehid][car_gruz], floatround( (car_data[vehid][car_gruz]/50)*price_prod )   );
+								car_data[vehid][car_gruz] = 0;
+								
+							}
+
+						}
+						return SendClientMessage(playerid, 0xe53935FF, "Вы должны находиться рядом с бизнесом");
+					}
+				}
 				return 1;
 			}
 			
+		}
+		case 1355:
+		{
+			if(!response)return 1;
+			new newcar = GetPlayerVehicleID(playerid);
+			if(!strlen(inputtext) || (strval(inputtext)+car_data[newcar][car_gruz]) > car_data[newcar][car_limit_gruz] || strval(inputtext) < 100) 
+			{
+				ShowPlayerDialog(playerid,1355, DIALOG_STYLE_INPUT, "Загрузка зерна","Введите количество зерна на загрузку", "Ок", "Отмена"); 
+				SCM(playerid, COLOR_GREY, "Не верное кол-о зерна!");
+				return 1;
+			}
+			new str_buy_zerno[300];
+			format(str_buy_zerno, sizeof str_buy_zerno, "\
+				{ffffff}Вы действительно хотите купить зерно?\n\n\
+				Количество: {8d6e63}%d{ffffff}\n\
+				Стоимость: {8d6e63}%d{ffffff}\n\
+				Ваша скидка: {8d6e63}%d{ffffff} проц.", strval(inputtext), (strval(inputtext)*ZernBuy)-((strval(inputtext)*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]),job_lvl(pData[playerid][job_skill][job_razvozchik]));
+			ShowPlayerDialog(playerid, 1356, DIALOG_STYLE_MSGBOX, "Договор", str_buy_zerno, "Оплатить", "Отмена");
+			SetPVarInt(playerid, "cnt_buy_zerno", strval(inputtext));
+			return 1;
 		}
 	case 1322:
 		{
 			if(!response) return true;
 			switch(listitem)
 			{
-			case 0: ShowPlayerDialog(playerid,1356, DIALOG_STYLE_INPUT, " ","Сколько вы хотите купить зерна?", "Готово", "Отмена");
+			case 0: ShowPlayerDialog(playerid,1355, DIALOG_STYLE_INPUT, " ","Сколько вы хотите купить зерна?", "Готово", "Отмена");
 			case 1: ShowPlayerDialog(playerid,1357, DIALOG_STYLE_INPUT, " ","Сколько вы хотите продать зерна?", "Готово", "Отмена");
 			case 2: ShowPlayerDialog(playerid,1358, DIALOG_STYLE_INPUT, " ","Сколько вы хотите купить урожая?", "Готово", "Отмена");
 			case 3: ShowPlayerDialog(playerid,1359, DIALOG_STYLE_INPUT, " ","Сколько вы хотите продать урожая?", "Готово", "Отмена");
@@ -8601,59 +8725,58 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			SCM(playerid,COLOR_GREEN," Загрузка зерна завершена. Вы можете продать зерно на ферму {FFFFFF}(( /gps >> [5] Фермы ))");
 			return 1;
 		}
+
 	case 1356:
 		{
+			if(!response || pData[playerid][pJob] != 5) return true;
 			new newcar = GetPlayerVehicleID(playerid);
-			if(newcar >= comptruck[0] && newcar <= comptruck[1])
-			{
-				if(!response || pData[playerid][pJob] != 5) return true;
-				if(GetPVarInt(playerid,"rentcar_job") != newcar) 
-					return SCM(playerid,COLOR_GREY," Это не ваш автомобиль!");
+			new cnt_zerna = GetPVarInt(playerid, "cnt_buy_zerno");
+			DeletePVar(playerid, "cnt_buy_zerno");
 
-				if(!strlen(inputtext) || (strval(inputtext)+car_data[newcar][car_gruz]) > car_data[newcar][car_limit_gruz] || strval(inputtext) < 100) 
-				{
-					ShowPlayerDialog(playerid,1356, DIALOG_STYLE_INPUT, "Загрузка зерна","Введите количество зерна на загрузку", "Ок", "Отмена"); 
-					SCM(playerid, COLOR_GREY, "Не верное кол-о зерна!");
-					return 1;
-				}
-				if(car_data[newcar][car_gruz]> 0 && car_data[newcar][car_gruz_type] != CAR_GRUZ_ZERNO)
-					return SCM(playerid, COLOR_GREY, "Вы не можете перевозить разные типы продукции!");
-
-				if(!PlayerToPoint(10.0,playerid,2191.9878,-2262.4209,13.6586)) 
-					return SCM(playerid,COLOR_GREY," В данном месте нельзя заказать продукты");
-
-				if(pData[playerid][pCash] < strval(inputtext)*ZernBuy) 
-					return SCM(playerid, COLOR_WHITE," У вас не хватает денег!");
-
-				pData[playerid][pCash] -= strval(inputtext)*ZernBuy;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
-
-				new Float:x, Float:y, Float:z;
-				GetVehicleParamsEx(newcar,engine,lights,alarm,doors,bonnet,boot,objective);
-				SetVehicleParamsEx(newcar,false,false,false,doors,false,false,false);
-				SetVehicleVelocity(newcar, 0.0, 0.0, 0.0);
-				AntiCheatGetVehiclePos(newcar, x, y, z);
-				GetXYInBackOfPlayer(playerid, x, y,3.5);
-
-				car_pickup[newcar] = CreateDynamicPickup(19197,23,x,y,z+0.5);
-				car_data[newcar][car_gruz_type] = CAR_GRUZ_ZERNO;
-
-				new _arrayData[3];
-				_arrayData[0] = pickup_load_veh_gruzchik; 	// тип пикапа
-				_arrayData[1] = newcar; 					// номер тачки
-				_arrayData[2] = strval(inputtext);			// сколько нужно загрузить
+			if(car_data[newcar][TypeCar] != TYPE_RAZVOZ)
+				return SCM(playerid,COLOR_GREY," Вы должны находиться в рабочем транспорте!");
 				
-				Streamer_SetArrayData(STREAMER_TYPE_PICKUP, car_pickup[newcar], E_STREAMER_EXTRA_ID, _arrayData);
+			if(GetPVarInt(playerid,"rentcar_job") != newcar) 
+				return SCM(playerid,COLOR_GREY," Это не ваш автомобиль!");
 
-				new LBLstring[32];
-				format(LBLstring, sizeof LBLstring, "Загружено\n{ffffff}%d / %d",car_data[newcar][car_gruz], strval(inputtext));
-				car_text[newcar] = Create3DTextLabel(LBLstring,0x5CABBDAA,x,y,z+1,15.0,0);
-				SCM(playerid, 0x0073B7AA, " Машина на месте. Теперь вы и грузчики могут загружать ее");
-				SCM(playerid, 0x0073B7AA, " Если решите завершить загрузку, сядьте снова в машину");
-				RemovePlayerFromVehicle(playerid);
-				return true;
-			}
-			else return SCM(playerid,COLOR_GREY," Вы должны находиться в фургоне");
+			
+			if(car_data[newcar][car_gruz]> 0 && car_data[newcar][car_gruz_type] != CAR_GRUZ_ZERNO)
+				return SCM(playerid, COLOR_GREY, "Вы не можете перевозить разные типы продукции!");
+
+			if(!PlayerToPoint(10.0,playerid,2191.9878,-2262.4209,13.6586)) 
+				return SCM(playerid,COLOR_GREY," В данном месте нельзя закупить зерно!");
+
+			if(pData[playerid][pCash] < (cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) ))
+				return SCM(playerid, COLOR_WHITE," У вас не хватает денег!");
+
+			pData[playerid][pCash] -= (cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) );
+			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+
+			new Float:x, Float:y, Float:z;
+			GetVehicleParamsEx(newcar,engine,lights,alarm,doors,bonnet,boot,objective);
+			SetVehicleParamsEx(newcar,false,false,false,doors,false,true,false);
+			SetVehicleVelocity(newcar, 0.0, 0.0, 0.0);
+			AntiCheatGetVehiclePos(newcar, x, y, z);
+			if(GetVehicleModel(newcar) == 456)GetXYInBackOfPlayer(playerid, x, y,5.5);
+			else GetXYInBackOfPlayer(playerid, x, y,3.5);
+
+			car_pickup[newcar] = CreateDynamicPickup(19197,23,x,y,z+0.5);
+			car_data[newcar][car_gruz_type] = CAR_GRUZ_ZERNO;
+
+			new _arrayData[3];
+			_arrayData[0] = pickup_load_veh_gruzchik; 	// тип пикапа
+			_arrayData[1] = newcar; 					// номер тачки
+			_arrayData[2] = cnt_zerna;			// сколько нужно загрузить
+				
+			Streamer_SetArrayData(STREAMER_TYPE_PICKUP, car_pickup[newcar], E_STREAMER_EXTRA_ID, _arrayData);
+
+			new LBLstring[32];
+			format(LBLstring, sizeof LBLstring, "Загружено\n{ffffff}%d / %d",car_data[newcar][car_gruz], cnt_zerna);
+			car_text[newcar] = Create3DTextLabel(LBLstring,0x5CABBDAA,x,y,z+1,15.0,0);
+			SCM(playerid, 0x0073B7AA, " Машина на месте. Теперь вы и грузчики могут загружать ее");
+			SCM(playerid, 0x0073B7AA, " Если решите завершить загрузку, сядьте снова в машину");
+			RemovePlayerFromVehicle(playerid);
+			return true;
 		}
 	case 1345:
 		{
@@ -10426,11 +10549,77 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			case 0: cmd_sellbiz(playerid);
 			case 1: ShowPlayerDialog(playerid,1522,DIALOG_STYLE_LIST,"Пополнить счет","[0] Электроэнергия\n[1] Баланс банка бизнеса","Выбрать","Назад");
 			case 2: ShowPlayerDialog(playerid, 1525, 1, "Снять деньги", "Введите кол-во вирт", "Принять", "Отмена");
-			case 3: SendMes(playerid,COLOR_WHITE," Баланс бизнеса: %i вирт",BizzInfo[i][bTill]),SendMes(playerid,COLOR_WHITE," Баланс 'LandTax': %i вирт",BizzInfo[i][bLandTax]),ShowPlayerDialog(playerid, 1846, 2, "Бизнес", "[0] Продать бизнес\n[1] Пополнить счет\n[2] Снять деньги\n[3] Баланс\n[4] Цена за товар\n[5] Цена за вход\n[6] Информация", "Выбрать", "Отмена");
-			case 4: if(BizzInfo[i][bType] == 1 || BizzInfo[i][bType] == 3 || BizzInfo[i][bType] == 4 || BizzInfo[i][bType] == 2) ShowPlayerDialog(playerid, 1526, 1, "Ввод параметра", "Введите цену за товар", "Принять", "Отмена");
-			case 5: if(BizzInfo[i][bType] != 4 && BizzInfo[i][bID] != 47 && BizzInfo[i][bID] != 48) ShowPlayerDialog(playerid, 1527, 1, "Ввод параметра", "Введите цену за товар вход", "Принять", "Отмена"); else return SCM(playerid,COLOR_GREY," Вы не владеете заправкой / Казино-Баром");
+			case 3: 
+			{
+				if(BizzInfo[i][bType] == 1 || BizzInfo[i][bType] == 3 || BizzInfo[i][bType] == 4 || BizzInfo[i][bType] == 2) 
+				{
+					ShowPlayerDialog(playerid, 1526, 1, "Ввод параметра", "Введите цену за товар", "Принять", "Отмена");
+					return 1;
+				}
+			}
+			case 4: 
+			{
+				if(BizzInfo[i][bType] != 4 && BizzInfo[i][bID] != 47 && BizzInfo[i][bID] != 48) 
+				{
+					ShowPlayerDialog(playerid, 1527, 1, "Ввод параметра", "Введите цену за вход", "Принять", "Отмена"); 
+				}
+				else return SCM(playerid,COLOR_GREY," Вы не владеете заправкой / Казино-Баром");
+			}
+			case 5:
+			{
+				new price_prod;
+				new buy_prod_str[123];
+				if(BizzInfo[i][bType] == 1 ) price_prod = strval(price_buy_drink_sklad);
+				if(BizzInfo[i][bType] == 2 ||  BizzInfo[i][bType] == 3) price_prod = strval(price_buy_product_sklad);
+				if(BizzInfo[i][bType] == 4 ) price_prod = strval(price_buy_fuel_sklad);
+
+				format(buy_prod_str, sizeof buy_prod_str, "{FFFFFF}Введите желаемое кол-во продуктов \n\nНа {8D8DFF}50{FFFFFF} единиц продукции приходиться {8D8DFF}%d {FFFFFF}вирт\n\n", price_prod);
+				ShowPlayerDialog(playerid, 1844, 1, "Продукты", buy_prod_str, "Заказать", "Отмена");
+				return 1;
+			}
 			case 6: PrintBizInfo(playerid, i);
 			}
+		}
+		case 1844:
+		{
+			if(!response) return true;
+			new till = strval(inputtext),
+			 	i = pData[playerid][pPBizzKey];
+			new buy_prod_str[123];
+
+			if(till < 50 || BizzInfo[i][bProducts]+till > 20000)
+			{
+				SendClientMessage(playerid, COLOR_GREY, "Максимально кол-во продуктов в бизнессе до 20000!");
+				new price_prod;
+				
+				if(BizzInfo[i][bType] == 1 ) price_prod = strval(price_buy_drink_sklad);
+				if(BizzInfo[i][bType] == 2 ||  BizzInfo[i][bType] == 3) price_prod = strval(price_buy_product_sklad);
+				if(BizzInfo[i][bType] == 4 ) price_prod = strval(price_buy_fuel_sklad);
+
+				format(buy_prod_str, sizeof buy_prod_str, "{FFFFFF}Введите желаемое кол-во продуктов \n\nНа {8D8DFF}50{FFFFFF} единиц продукции приходиться {8D8DFF}%d {FFFFFF}вирт\n\n", price_prod);
+				ShowPlayerDialog(playerid, 1844, 1, "Продукты", buy_prod_str, "Заказать", "Отмена");
+				return 1;
+			}
+			
+			for(new zz = 0; zz < sizeof prod_info-1; zz ++)
+			{
+				if(!prod_info[zz][prod_cnt])
+				{
+					prod_info[zz][prod_biz_id] 	= i;
+					prod_info[zz][prod_cnt] 	= till;
+					SendMes(playerid,0x4caf50FF, "Вы заказали {ffffff}%i{4caf50} продуктов. Остаток на счете: {ffffff}%i{4caf50} вирт", till, pData[playerid][pBank]);			
+					return 1;
+				}
+			}		
+
+			foreach(new p : Player)
+			{
+				if(pData[p][pJob] != 5) continue;
+
+				format(buy_prod_str, sizeof buy_prod_str,"Поступил новый заказ от %s. Используйте: /plist", BizzInfo[i][bMessage]);
+				SendClientMessage(playerid,0x80deeaFF, buy_prod_str);
+			}
+			return 1;
 		}
 	case 8445:
 		{
@@ -12498,37 +12687,19 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
 			SetPVarInt(playerid,"rentcar_job",GetPlayerVehicleID(playerid));
 			job_car[playerid] = GetPlayerVehicleID(playerid);
+			new vehid = GetPlayerVehicleID(playerid) ;
 			TogglePlayerControllable(playerid, 1);
 			GameTextForPlayer(playerid, "~r~-$500", 5000, 1);
 			GameTextForPlayer(playerid,"~w~YOU HAVE HIRED THE CAR~n~GOOD LUCK ON ROAD", 5000, 3);
-			if(GetPlayerVehicleID(playerid) >= comptruck[0] && GetPlayerVehicleID(playerid) <= comptruck[1])
+
+			if(vehid >= comptruck[0] && vehid <= comptruck[5])
 			{
-				//SendMes(playerid,TEAM_GROVE_COLOR," Зерна в машине: %i / 1000",car_grain[GetPlayerVehicleID(playerid)][0]);
-				//SendMes(playerid,TEAM_GROVE_COLOR," Урожая в машине: %i / 1000",car_prods[GetPlayerVehicleID(playerid)][0]);
-				//SendMes(playerid,TEAM_GROVE_COLOR," Наркотиков в машине: %i / 1000",car_prods[GetPlayerVehicleID(playerid)][1]);
+				SendMes(playerid,TEAM_GROVE_COLOR,"Загружено в машине: %i / %i",car_data[vehid][car_gruz],car_data[vehid][car_limit_gruz]);
+				
 				SCM(playerid,COLOR_WHITE,"  (( Команды: /prodmenu ))");
-				SCM(playerid,COLOR_WHITE," (( Чтобы закрыть машину, введите /plock ))");
+
 			}
-			else if(GetPlayerVehicleID(playerid) >= comptruck[2] && GetPlayerVehicleID(playerid) <= comptruck[3])
-			{
-				SendMes(playerid,TEAM_GROVE_COLOR,"Топливо: %i / %i",car_prods[GetPlayerVehicleID(playerid)][1],1000+pData[playerid][pPMGruz]);
-				SCM(playerid,COLOR_WHITE," (( Команды: /prodmenu ))");
-			}
-			else if(GetPlayerVehicleID(playerid) >= comptruck[4] && GetPlayerVehicleID(playerid) <= comptruck[5])
-			{
-				SendMes(playerid,TEAM_GROVE_COLOR,"Товары: %i / %i",car_prods[GetPlayerVehicleID(playerid)][2],pData[playerid][pPMGruz]);
-				SendMes(playerid,TEAM_GROVE_COLOR,"Еда: %i / %i",car_prods[GetPlayerVehicleID(playerid)][3],pData[playerid][pPMGruz]);
-			}
-			else if(GetPlayerVehicleID(playerid) >= comptruck[6] && GetPlayerVehicleID(playerid) <= comptruck[7])
-			{
-				SendMes(playerid,TEAM_GROVE_COLOR,"Товары: %i / %i",car_prods[GetPlayerVehicleID(playerid)][2],pData[playerid][pPMGruz]);
-				SendMes(playerid,TEAM_GROVE_COLOR,"Еда: %i / %i",car_prods[GetPlayerVehicleID(playerid)][3],pData[playerid][pPMGruz]);
-			}
-			else if(GetPlayerVehicleID(playerid) >= comptruck[8] && GetPlayerVehicleID(playerid) <= comptruck[9])
-			{
-				SendMes(playerid,TEAM_GROVE_COLOR,"Товары: %i / %i",car_prods[GetPlayerVehicleID(playerid)][2],pData[playerid][pPMGruz]);
-				SendMes(playerid,TEAM_GROVE_COLOR,"Еда: %i / %i",car_prods[GetPlayerVehicleID(playerid)][3],pData[playerid][pPMGruz]);
-			}
+			
 			else if(GetPlayerVehicleID(playerid) >= mehanik[0] && GetPlayerVehicleID(playerid) <= mehanik[12]) SCM(playerid,COLOR_GREEN,"Вы можете чинить и заправлять машины. (( Заправка: /refill / Ремонт: /repair ))"), SCM(playerid,COLOR_GREEN,"Вы должны заключить контракт с заправкой. (( Команда: /mcontract ))");
 			else if(GetPlayerVehicleID(playerid) >= buscar[0] && GetPlayerVehicleID(playerid) <= buscar[5]) ShowPlayerDialog(playerid,1745,DIALOG_STYLE_MSGBOX," ","Начать работу водителя автобуса?", "Да", "Нет");
 			else if(GetPlayerVehicleID(playerid) >= hotdogcar[0] && GetPlayerVehicleID(playerid) <= hotdogcar[1]) SCM(playerid,COLOR_GREEN,"Заключите контракт с закусочной, для торговли едой. (( Подъедьте к закусочной и  Введите: /hcontract ))");
@@ -15158,7 +15329,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 	case 10075: // Вход в дом с улице
 		{
-			if(!response) return DeletePVar(playerid, !#pPickHouseId);
+			if(!response) return 1;
 			new i = (GetPVarInt(playerid, !#pPickHouseId)-1);
 
 			if ( IsPlayerInDynamicArea(playerid, HouseInfo[i][h_area]) )
@@ -15828,115 +15999,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!response) return ShowPlayerDialog(playerid, 10415, DIALOG_STYLE_LIST, "Информация","[0] Статистика персонажа\n[1] Карманы\n[2] Скиллы\n[3] Сытость\n[4] Лицензии\n[5] Тел.справочник\n[6] Автобусы\n[7] Время\n[8] Бонусы\n[9] Рейтинг радиостанций", "Выбрать", "Назад");
 			return true;
 		}
-	case 2328:
-		{
-			if(!response) return true;
-			new tmpcar = GetPlayerVehicleID(playerid);
-			switch(listitem)
-			{
-			case 0: // разгрузить материалы
-				{
-					if(pData[playerid][pMember] == 24)
-					{
-						if(bFuri[tmpcar-hamccar[10]][bHells][0] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно материалов для разгрузки");
-						if(!IsAClub (playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(hamcmatbi > 100000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						hamcmatbi += bFuri[tmpcar-hamccar[10]][bHells][0];
-						bFuri[tmpcar-hamccar[10]][bHells][0] = 0;
-						if(hamcmatbi > 100000) hamcmatbi = 100000;
-						SendMes(playerid,COLOR_GREEN, " Материалы разгружены. {FFFFFF}Материалов  На складе: %i",hamcmatbi);
-					}
-					else if(pData[playerid][pMember] == 26)
-					{
-						if(bFuri[tmpcar-wmccar[10]][bWarlocks][0] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно материалов для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(wmcmatbi >= 100000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						wmcmatbi += bFuri[tmpcar-wmccar[10]][bWarlocks][0];
-						bFuri[tmpcar-wmccar[10]][bWarlocks][0] = 0;
-						if(wmcmatbi > 100000) wmcmatbi = 100000;
-						SendMes(playerid,COLOR_GREEN, " Материалы разгружены. {FFFFFF}Материалов  На складе: %i",wmcmatbi);
-					}
-					else if(pData[playerid][pMember] == 29)
-					{
-						if(bFuri[tmpcar-pmccar[10]][bPagans][0] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно материалов для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(pmcmatbi >= 100000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						pmcmatbi += bFuri[tmpcar-pmccar[10]][bPagans][0];
-						bFuri[tmpcar-pmccar[10]][bPagans][0] = 0;
-						if(pmcmatbi > 100000) pmcmatbi = 1000000;
-						SendMes(playerid,COLOR_GREEN, " Материалы разгружены. {FFFFFF}Материалов  На складе: %i",pmcmatbi);
-					}
-				}
-			case 1: // разгрузить бензин
-				{
-					if(pData[playerid][pMember] == 24)
-					{
-						if(bFuri[tmpcar-hamccar[10]][bHells][2] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно бензина для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(hamcfuels >= 10000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						hamcfuels += bFuri[tmpcar-hamccar[10]][bHells][2];
-						bFuri[tmpcar-hamccar[10]][bHells][2] = 0;
-						if(hamcfuels > 10000) hamcfuels = 10000;
-						SendMes(playerid,COLOR_GREEN, " Бензин разгружен. {FFFFFF}Бензина  На складе: %i",hamcfuels);
-					}
-					else if(pData[playerid][pMember] == 26)
-					{
-						if(bFuri[tmpcar-wmccar[10]][bWarlocks][2] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно бензина для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(wmcfuels >= 10000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						wmcfuels += bFuri[tmpcar-wmccar[10]][bWarlocks][2];
-						bFuri[tmpcar-wmccar[10]][bWarlocks][2] = 0;
-						if(wmcfuels > 10000) wmcfuels = 10000;
-						SendMes(playerid,COLOR_GREEN, " Бензин разгружен. {FFFFFF}Бензина  На складе: %i",wmcfuels);
-					}
-					else if(pData[playerid][pMember] == 29)
-					{
-						if(bFuri[tmpcar-pmccar[10]][bPagans][2] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно бензина для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(pmcfuels >= 10000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						pmcfuels += bFuri[tmpcar-pmccar[10]][bPagans][0];
-						bFuri[tmpcar-pmccar[10]][bPagans][2] = 0;
-						if(pmcfuels > 10000) pmcfuels = 10000;
-						SendMes(playerid,COLOR_GREEN, " Бензин разгружен. {FFFFFF}Бензина  На складе: %i",pmcfuels);
-					}
-				}
-			case 2: // разгрузить продукты
-				{
-					if(pData[playerid][pMember] == 24)
-					{
-						if(bFuri[tmpcar-hamccar[10]][bHells][1] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно продуктов для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(hamcprods >= 2000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						hamcprods += bFuri[tmpcar-hamccar[10]][bHells][1];
-						bFuri[tmpcar-hamccar[10]][bHells][1] = 0;
-						if(hamcprods > 2000) hamcprods = 2000;
-						SendMes(playerid,COLOR_GREEN, " Продукты разгружены. {FFFFFF}Продуктов  На складе: %i",hamcprods);
-					}
-					else if(pData[playerid][pMember] == 26)
-					{
-						if(bFuri[tmpcar-wmccar[10]][bWarlocks][1] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно продуктов для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(wmcprods >= 2000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						wmcprods += bFuri[tmpcar-wmccar[10]][bWarlocks][1];
-						bFuri[tmpcar-wmccar[10]][bWarlocks][1] = 0;
-						if(wmcfuels > 2000) wmcmatbi = 2000;
-						SendMes(playerid,COLOR_GREEN, " Продукты разгружены. {FFFFFF}Продуктов  На складе: %i",wmcprods);
-					}
-					else if(pData[playerid][pMember] == 29)
-					{
-						if(bFuri[tmpcar-pmccar[10]][bPagans][1] <= 0) return SCM(playerid,COLOR_GREY, " Не достаточно продуктов для разгрузки");
-						if(!IsAClub(playerid)) return SCM(playerid, COLOR_GRAD1, " Вы не на своей базе");
-						if(pmcprods >= 2000) return  SCM(playerid,COLOR_GREY, " Склад заполнен");
-						pmcprods += bFuri[tmpcar-pmccar[10]][bPagans][1];
-						bFuri[tmpcar-pmccar[10]][bPagans][1] = 0;
-						if(pmcprods > 2000) pmcprods = 2000;
-						SendMes(playerid,COLOR_GREEN, " Продукты разгружены. {FFFFFF}Продуктов  На складе: %i",pmcprods);
-					}
-				}
-			}
-		}
 	
-
 	case 2329: // Ввести код Google Authenticator
 		{
 			if(!response) return ShowPlayerDialog(playerid, 10414, DIALOG_STYLE_LIST, "Настройки","[0] Новый пароль\n[1] Безопасность\n[2] E-Mail\n[3] Пол\n[4] Цвет ника\n[5] Выбор спавна\n[6] Чат\n[7] Отображение оружия", "Выбрать", "Назад");
@@ -18204,7 +18267,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	}
 	if(updatecheck[playerid] != 9999) GameTextForPlayer(playerid, "\n\n~g~At Destination", 3000, 3),updatecheck[playerid] = 9999;
 	new tmpcar = GetPlayerVehicleID(playerid);
-	SetPVarInt(playerid,"entercheckpoint", GetTickCount());
+
 	if(GetPVarInt(playerid,"installation") == 2 && IsPlayerInRangeOfPoint(playerid, 15.0, 1067.3966,2128.3901,10.5110) && GetPVarInt(playerid,"Workshop") > 0)
 	{
 		switch(GetPVarInt(GetPVarInt(playerid,"installation_"),"detals"))
@@ -18477,8 +18540,8 @@ public OnPlayerEnterCheckpoint(playerid)
 public OnPlayerLeaveCheckpoint(playerid) return true;
 public OnPlayerEnterRaceCheckpoint(playerid)
 {
-	SendMes(playerid,-1,"cp - %d",CP[playerid]);
-	SetPVarInt(playerid,"entercheckpoint", GetTickCount());
+	if(GetPVarInt(playerid, "cnt_buy_prod") )return 1;
+
 	if(CP[playerid] == 776) GameTextForPlayer(playerid, "~r~Point Is Established", 3000, 1),CP[playerid] = 0;
 	DisablePlayerRaceCheckpoint(playerid);
 	new _vehicleidx = GetPlayerVehicleID(playerid);
@@ -19395,6 +19458,17 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 	if(GetPVarInt(playerid, "no_need_area"))
 	{
 		DeletePVar(playerid, "no_need_area");
+		return 1;
+	}
+	if(areaid >= prod_buy_pick[0] && areaid <= prod_buy_pick[2])
+	{
+		if(IsPlayerInDynamicArea(playerid, prod_buy_pick[0])) SetPVarInt(playerid, "prod_buy_type", CAR_GRUZ_PROD);
+		if(IsPlayerInDynamicArea(playerid, prod_buy_pick[1])) SetPVarInt(playerid, "prod_buy_type", CAR_GRUZ_DRINK);
+		if(IsPlayerInDynamicArea(playerid, prod_buy_pick[2])) SetPVarInt(playerid, "prod_buy_type", CAR_GRUZ_FUEL);
+
+		ShowPlayerDialog(playerid, 125, DIALOG_STYLE_INPUT, "Покупка продуктов", "\
+			{FFFFFF}Введите желаемое кол-во продуктов\n\n\
+			На {8D8DFF}50{FFFFFF} единицу продукции приходиться {8D8DFF}50 {FFFFFF}вирт\n", "Купить", "Отмена");
 		return 1;
 	}
 	if(areaid >= atm_area[0] && areaid <= atm_area[1])
@@ -24588,7 +24662,48 @@ stock UpdatePlayer(playerid)
     new vehicleid = GetPlayerVehicleID(playerid);
     
     GetVehicleParamsEx(vehicleid,engine,lights,alarm,doors,bonnet,boot,objective);
-    
+    if(GetPVarInt(playerid, "cnt_buy_prod") )
+    { //Загрузка тачки (развозчик продуктов)
+    	if(IsPlayerInAnyVehicle(playerid) && IsPlayerInRaceCheckpoint(playerid))
+    	{
+    		if(car_data[vehicleid][car_gruz] > 0 && car_data[vehicleid][car_gruz_type] != GetPVarInt(playerid, "prod_buy_type") )
+    		{
+    			SendClientMessage(playerid, 0xef5350FF, "У вас в машине загружен другой груз!");
+    		}
+    		else
+    		{
+    			new buy_prod = GetPVarInt(playerid, "cnt_buy_prod");
+    			if(buy_prod > 100 ) 
+    			{
+    				SetPVarInt(playerid, "cnt_buy_prod", buy_prod-100);
+    				buy_prod = 100;
+    			}
+    			else 
+    			{
+    				DeletePVar(playerid, "cnt_buy_prod");
+
+    			}
+    			if(car_data[vehicleid][car_gruz] + buy_prod > car_data[vehicleid][car_limit_gruz])
+    			{
+    				SendClientMessage(playerid, 0xef5350FF, "В машине нет места!");
+    			}
+    			else
+    			{
+    				car_data[vehicleid][car_gruz] += buy_prod;
+    				car_data[vehicleid][car_gruz_type] = GetPVarInt(playerid, "prod_buy_type");
+    				new str_text_load[25];
+    				format(str_text_load, sizeof str_text_load,"~g~%d/%d",car_data[vehicleid][car_gruz],car_data[vehicleid][car_limit_gruz]);
+	    			GameTextForPlayer(playerid, str_text_load, 1200, 3);
+    			}
+    			if(!GetPVarInt(playerid, "cnt_buy_prod"))
+    			{
+    				SendMes(playerid, 0x8bc34aFF, "Загрузка завершена! Загруженность машины: {ffffff}%d{8bc34a}/{ffffff}%d",car_data[vehicleid][car_gruz],car_data[vehicleid][car_limit_gruz]);
+    				SendClientMessage(playerid, 0x689f38FF, "(( {ffffff}Используйте /plist для продажи {689f38}))");
+    			}
+    		}
+
+    	}
+    }
 	if(speed_update[playerid] != -1) // обновление спидометра
 	{
 	    if(ServSecond % 2 ) // раз в две секунды
@@ -25941,6 +26056,18 @@ public OnGameModeExit()
 }
 stock LoadObject()
 {
+	CreateDynamic3DTextLabel("{218065}~~~~~~~~~~~~~~~~~~~~\nПокупка еды и товаров\n{218065}~~~~~~~~~~~~~~~~~~~~",COLOR_WHITE,-514.9977,-542.1826,25.5234+0.4,25.0);
+	CreateTrigger(-514.9977,-542.1826,25.5234-1,0xDD8d6e63); // покупка товара
+	prod_buy_pick[0] = CreateDynamicSphere(-514.9977,-542.1826,25.5234,1.5);
+
+	CreateDynamic3DTextLabel("{218065}~~~~~~~~~~~~~~~~~~~~\nПокупка алкоголя\n{218065}~~~~~~~~~~~~~~~~~~~~",COLOR_WHITE,-50.6179,-232.0994,6.7646+0.4,25.0);
+	CreateTrigger(-50.6179,-232.0994,6.7646-1,0xDD8d6e63); // покупка товара
+	prod_buy_pick[1] = CreateDynamicSphere(-50.6179,-232.0994,6.7646,1.5);
+
+	CreateDynamic3DTextLabel("{218065}~~~~~~~~~~~~~~~~~~~~\nПокупка топлива\n{218065}~~~~~~~~~~~~~~~~~~~~",COLOR_WHITE,-1023.0082,-686.6911,32.0078+0.4,25.0);
+	CreateTrigger(-1023.0082,-686.6911,32.0078-1,0xDD8d6e63); // покупка товара
+	prod_buy_pick[2] = CreateDynamicSphere(-1023.0082,-686.6911,32.0078,1.5);
+
 	CreateDynamicObject(19379,-1904.19,277.68,41.64,0.0000000,0.0000000,-90.0900000); //sf покраска
 
 	//-------------- Триггеры -----------------
@@ -26403,9 +26530,6 @@ stock load_pickups()
 	garagexit[3] = CreateDynamicSphere(1379.5923,-21.5990,1000.9251,-1,5);
 	CreateDynamicPickup(1318,23,1379.5923,-21.5990,1000.9251,-1,5);//
 	//
-	CreateDynamicPickup(1239,23,-1027.4069,-593.4584,32.0126); //prodpick
-	CreateDynamicPickup(1239,23,-514.4622,-543.0626,25.5234);
-	//
 
 	RouletCloakroom[0] = create_pickup(1275,1963.7473,1063.2229,994.4688,-1);// Four Dragons
 	RouletCloakroom[1] = create_pickup(1275,2150.5393,1603.1434,1006.1802,-1); // Caligula
@@ -26560,8 +26684,7 @@ stock load_pickups()
 	//==========================================================================
 	format(string,32, "{33AA33}Склад армии ЛВ: {FFFFFF}%i", armmatbi);
 	LvaLable = CreateDynamic3DTextLabel(string, 0xFFFF00AA, -1325.0364,492.7100,28.5057,15.0);
-	CreateDynamic3DTextLabel("{218065}~~~~~~~~~~~~~~~~~~~~\nСклад топлива\n{FFFFFF}''/ProdMenu''\n{218065}~~~~~~~~~~~~~~~~~~~~",COLOR_WHITE,-1027.4069,-593.4584,32.0126+0.4,25.0);
-	CreateDynamic3DTextLabel("{218065}~~~~~~~~~~~~~~~~~~~~\nСклад еды и товаров\n{FFFFFF}''/ProdMenu''\n{218065}~~~~~~~~~~~~~~~~~~~~",COLOR_WHITE,-514.4622,-543.0626,25.5234+0.4,25.0);
+
 	format(string,128, "Разгрузка урожая\nСтоимость урожая %i вирт",UrojSell);
 	CreateDynamic3DTextLabel(string,0xFF9900FF,1630.0807,2323.3582,10.8203,25.0);
 	CreateDynamic3DTextLabel("________________",0xFF9900FF,1630.0807,2323.3582,10.8203,25.0);
@@ -26712,6 +26835,11 @@ stock load_pickups()
 
 stock actors_load()
 {
+	CreateActor(15, -516.0255,-540.8207,25.5234,212.1037); 	// на складе продуктов
+	CreateActor(72, -52.5788,-231.7789,6.7646,262.6457);	// на складе алкоголя
+	CreateActor(72, -1021.8898,-688.9827,32.0078,28.9154);	// на складе топлива
+	
+
 	new loader_actor = CreateActor(27, 2181.7244,-2252.5786,14.7734,224.1906); // прораб на мешка ( устройство на работу)
 	ApplyActorAnimation(loader_actor, "SMOKING", "M_smklean_loop", 4.1, 1, 0, 0, 1, 1);
 
@@ -27843,10 +27971,6 @@ stock CreateVehicles()
 	{
 		car_data[i][car_limit_gruz] = 2000;
 	}
-	for(new i = comptruck[4]; i < comptruck[5]; i++)
-	{
-		car_data[i][car_limit_gruz] = 2000;
-	}
 	for(new i = comptruck[0]; i < comptruck[5]; i++)
 	{
 		car_data[i][TypeCar] = TYPE_RAZVOZ;
@@ -28556,6 +28680,38 @@ stock MoveVehicleToGarage(vehicleid,Float:x,Float:y,Float:z,Float:angle,interior
 		}
 	}
 }
+stock get_prod_name(type)
+{
+	new prod_str[20];
+	switch(type)
+	{
+		case 1: prod_str = "Выпивка";
+		case 2: prod_str = "Продукты";
+		case 3: prod_str = "Канцелярия";
+		case 4: prod_str = "Топливо";
+	}
+	return prod_str;
+}
+CMD:plist(playerid)
+{
+	new str_delivery[100], str_list[512];
+	format(str_list, sizeof str_list,"{ffffff}Номер\t{ffffff}Тип товара\t{ffffff}Заказчик\t{ffffff}Кол-о");
+
+	for(new ff = 0; ff < sizeof prod_info-1; ff++)
+	{
+		if(prod_info[ff][prod_cnt]) 
+		{
+			new biz = prod_info[ff][prod_biz_id];
+			format(str_delivery, sizeof str_delivery, "%d\t%s\t%s\t%d\n",ff,get_prod_name(BizzInfo[biz][bType]), BizzInfo[biz][bMessage],prod_info[ff][prod_cnt]);
+			
+
+			strcat(str_list, str_delivery);
+			
+		}
+	}
+	ShowPlayerDialog(playerid,1455,DIALOG_STYLE_TABLIST_HEADERS,"Заказы",str_list,"Просмотр","Закрыть");
+	return 1;
+}
 CMD:delivery(playerid)
 {
 	if(pData[playerid][pJob] != J_DELIVERY)
@@ -29128,7 +29284,7 @@ CMD:prodmenu(playerid)
 	if(GetPVarInt(playerid,"rentcar_job") != GetPlayerVehicleID(playerid)) 
 		return SCM(playerid,COLOR_GREY," Это не ваш автомобиль!");
 
-	ShowPlayerDialog(playerid, 1321, DIALOG_STYLE_LIST, "Меню развозчика продуктов", "1. Просмотр содержимого машины\n2. Зерно и урожай\n3. Список заказов", "Выбрать", "Отмена");
+	ShowPlayerDialog(playerid, 1321, DIALOG_STYLE_LIST, "Меню развозчика продуктов", "{8d6e63}>{ffffff} Просмотр содержимого машины\n{8d6e63}>{ffffff} Зерно и урожай\n{8d6e63}>{ffffff} Список заказов\n{8d6e63}>{ffffff} Продажа продуктов", "Выбрать", "Отмена");
 
 	return true;
 }
@@ -29598,14 +29754,19 @@ CMD:bmenu(playerid)
 	new i = pData[playerid][pPBizzKey];
 	if(PlayerToPoint(5, playerid,BizzInfo[i][bEntranceX], BizzInfo[i][bEntranceY], BizzInfo[i][bEntranceZ]) || PlayerToPoint(5, playerid,BizzInfo[i][bBarX], BizzInfo[i][bBarY], BizzInfo[i][bBarZ]))
 	{
-		if(pData[playerid][pLogin] == false) return true;
 		if(!BGet(playerid)) return SCM(playerid, COLOR_GREY, " Вы не владеете бизнесом");
-		format(YCMDstr, sizeof(YCMDstr), "[0] Продать бизнес\n[1] Пополнить счет\n[2] Снять деньги\n[3] Баланс\n[4] Цена за товар\n[5] Цена за вход\n[6] Информация");
+		format(YCMDstr, sizeof(YCMDstr), 	"{c0ca33}>{ffffff} Продать бизнес\n\
+											{c0ca33}>{ffffff} Пополнить счет\n\
+											{c0ca33}>{ffffff} Снять деньги\n\
+											{c0ca33}>{ffffff} Цена за товар\n\
+											{c0ca33}>{ffffff} Цена за вход\n\
+											{c0ca33}>{ffffff} Заказ продуктов\n\
+											{c0ca33}>{ffffff} Информация");
 		ShowPlayerDialog(playerid, 1846, 2, "Бизнес", YCMDstr, "Выбрать", "Отмена");
 		return true;
 	}
-	else if(!PlayerToPoint(5, playerid,BizzInfo[i][bEntranceX], BizzInfo[i][bEntranceY], BizzInfo[i][bEntranceZ]) && !PlayerToPoint(5, playerid,BizzInfo[i][bBarX], BizzInfo[i][bBarY], BizzInfo[i][bBarZ])) return SCM(playerid,COLOR_GREY," Вы должны находиться рядом с бизнесом");
-	return true;
+	else return SCM(playerid,COLOR_GREY," Вы должны находиться рядом с бизнесом");
+	//return true;
 }
 CMD:kmenu(playerid)
 {
@@ -30670,98 +30831,7 @@ CMD:buyhouse(playerid)
 	}
 	return true;
 }
-CMD:sellprodsone(playerid)
-{
-	if(car_prods[GetPlayerVehicleID(playerid)][3] <= 0) return SCM(playerid,COLOR_GREY," В автомобиле нет продуктов!");
-	for(new bizz = 1; bizz <= TotalBizz; bizz++)
-	{
-		if(PlayerToPoint(5.0, playerid, BizzInfo[bizz][bEntranceX], BizzInfo[bizz][bEntranceY], BizzInfo[bizz][bEntranceZ]) && BizzInfo[bizz][bType] == 1)
-		{
-			new newcar = GetPlayerVehicleID(playerid);
-			if(newcar >= comptruck[4] && newcar <= comptruck[9])
-			{
-				if(strcmp(BizzInfo[bizz][bOwner],"None",true) == 0) return SCM(playerid,COLOR_GREY," У бизнеса нет владельца");
-				SetPVarInt(playerid, "bizz", bizz);
-				new null = 0;
-				if(BizzInfo[bizz][bProducts]+car_prods[GetPlayerVehicleID(playerid)][3] > BizzMaxProds[bizz]) null = BizzMaxProds[bizz]-BizzInfo[bizz][bProducts];
-				else null = car_prods[GetPlayerVehicleID(playerid)][3];
-				format(string,256,"Вы собираетесь продать продукты\n\n{15B5B8}Бизнес: %s\n{FFD500}Количество: %d\n{E51212}Стоимость: %d вирт",BizzInfo[bizz][bMessage],null,null*16);
-				return ShowPlayerDialog(playerid,1387,DIALOG_STYLE_MSGBOX,"Продажа продуктов",string,"Продать","Отмена");
-			}
-			else return SCM(playerid,COLOR_GREY," Нужно быть в транспортном средстве, которое может перевозить данный тип груза");
-		}
-	}
-	return true;
-}
-CMD:sellprodstwo(playerid)
-{
-	if(car_prods[GetPlayerVehicleID(playerid)][3] <= 0) return SCM(playerid,COLOR_GREY," В автомобиле нет продуктов!");
-	for(new bizz = 1; bizz <= TotalBizz; bizz++)
-	{
-		if(PlayerToPoint(5.0, playerid, BizzInfo[bizz][bEntranceX], BizzInfo[bizz][bEntranceY], BizzInfo[bizz][bEntranceZ]) && BizzInfo[bizz][bType] == 2)
-		{
-			new newcar = GetPlayerVehicleID(playerid);
-			if(newcar >= comptruck[4] && newcar <= comptruck[9])
-			{
-				if(strcmp(BizzInfo[bizz][bOwner],"None",true) == 0) return SCM(playerid,COLOR_GREY," У бизнеса нет владельца");
-				SetPVarInt(playerid, "bizz", bizz);
-				new null = 0;
-				if(BizzInfo[bizz][bProducts]+car_prods[GetPlayerVehicleID(playerid)][3] > BizzMaxProds[bizz]) null = BizzMaxProds[bizz]-BizzInfo[bizz][bProducts];
-				else null = car_prods[GetPlayerVehicleID(playerid)][3];
-				format(string,256,"Вы собираетесь продать продукты\n\n{15B5B8}Бизнес: %s\n{FFD500}Количество: %d\n{E51212}Стоимость: %d вирт",BizzInfo[bizz][bMessage],null,null*16);
-				return ShowPlayerDialog(playerid,1388,DIALOG_STYLE_MSGBOX,"Продажа продуктов",string,"Продать","Отмена");
-			}
-			else return SCM(playerid,COLOR_GREY," Нужно быть в транспортном средстве, которое может перевозить данный тип груза");
-		}
-	}
-	return true;
-}
-CMD:sellprodsthree(playerid)
-{
-	if(car_prods[GetPlayerVehicleID(playerid)][2] <= 0) return SCM(playerid,COLOR_GREY," В автомобиле нет продуктов!");
-	for(new bizz = 1; bizz <= TotalBizz; bizz++)
-	{
-		if(PlayerToPoint(5.0, playerid, BizzInfo[bizz][bEntranceX], BizzInfo[bizz][bEntranceY], BizzInfo[bizz][bEntranceZ]) && BizzInfo[bizz][bType] == 3)
-		{
-			new newcar = GetPlayerVehicleID(playerid);
-			if(newcar >= comptruck[4] && newcar <= comptruck[9])
-			{
-				if(strcmp(BizzInfo[bizz][bOwner],"None",true) == 0) return SCM(playerid,COLOR_GREY," У бизнеса нет владельца");
-				SetPVarInt(playerid, "bizz", bizz);
-				new null = 0;
-				if(BizzInfo[bizz][bProducts]+car_prods[GetPlayerVehicleID(playerid)][2] > BizzMaxProds[bizz]) null = BizzMaxProds[bizz]-BizzInfo[bizz][bProducts];
-				else null = car_prods[GetPlayerVehicleID(playerid)][2];
-				format(string,256,"Вы собираетесь продать Товары\n\n{15B5B8}Бизнес: %s\n{FFD500}Количество: %d\n{E51212}Стоимость: %d вирт",BizzInfo[bizz][bMessage],null,null*16);
-				return ShowPlayerDialog(playerid,1389,DIALOG_STYLE_MSGBOX,"Продажа продуктов",string,"Продать","Отмена");
-			}
-			else return SCM(playerid,COLOR_GREY," Нужно быть в транспортном средстве, которое может перевозить данный тип груза");
-		}
-	}
-	return true;
-}
-CMD:sellprodsfour(playerid)
-{
-	if(car_prods[GetPlayerVehicleID(playerid)][1] <= 0) return SCM(playerid,COLOR_GREY," В автомобиле нет продуктов!");
-	for(new bizz = 1; bizz <= TotalBizz; bizz++)
-	{
-		if(PlayerToPoint(5.0, playerid, BizzInfo[bizz][bEntranceX], BizzInfo[bizz][bEntranceY], BizzInfo[bizz][bEntranceZ]) && BizzInfo[bizz][bType] == 4)
-		{
-			new newcar = GetPlayerVehicleID(playerid);
-			if(newcar >= comptruck[2] && newcar <= comptruck[3])
-			{
-				if(strcmp(BizzInfo[bizz][bOwner],"None",true) == 0) return SCM(playerid,COLOR_GREY," У бизнеса нет владельца");
-				SetPVarInt(playerid, "bizz", bizz);
-				new null = 0;
-				if(BizzInfo[bizz][bProducts]+car_prods[GetPlayerVehicleID(playerid)][1] > BizzMaxProds[bizz]) null = BizzMaxProds[bizz]-BizzInfo[bizz][bProducts];
-				else null = car_prods[GetPlayerVehicleID(playerid)][1];
-				format(string,256,"Вы собираетесь продать топливо\n\n{15B5B8}Бизнес: %s\n{FFD500}Количество: %d\n{E51212}Стоимость: %d вирт",BizzInfo[bizz][bMessage],null,null*16);
-				return ShowPlayerDialog(playerid,1390,DIALOG_STYLE_MSGBOX,"Продажа продуктов",string,"Продать","Отмена");
-			}
-			else return SCM(playerid,COLOR_GREY," Нужно быть в транспортном средстве, которое может перевозить данный тип груза");
-		}
-	}
-	return true;
-}
+
 CMD:selltune(playerid)
 {
 	if(pData[playerid][pLogin] == false) return true;
@@ -34790,8 +34860,6 @@ CMD:sms(playerid, params[])
 		pData[playerid][pMuted] = 10800;
 		return true;
 	}
-	AntiCheatGetPos(playerid,CallInfo[playerid][callx],CallInfo[playerid][cally],CallInfo[playerid][callz]);
-	CallInfo[playerid][callused] = 1;
 	switch (params[0])
 	{
 	case 11888:
@@ -34942,9 +35010,7 @@ CMD:call(playerid, params[])
 		return true;
 	}
 	if(Mobile[playerid] != 9999) return SCM(playerid, COLOR_GRAD2, "  Вы уже разговариваете по телефону ");
-	AntiCheatGetPos(playerid,CallInfo[playerid][callx],CallInfo[playerid][cally],CallInfo[playerid][callz]);
-	CallInfo[playerid][callused] = 1;
-	
+
 	if(params[0] == pData[playerid][pPnumber])
 	{
 		SCM(playerid, COLOR_GRAD2, " Линия занята");
@@ -35228,9 +35294,12 @@ CMD:sc(playerid, params[])
 forward OnCheatWarning(playerid, ip_address[], type, code, code2, count);
 public OnCheatWarning(playerid, ip_address[], type, code, code2, count)
 {
-	new cheat_warn[123];
-	format(cheat_warn, sizeof(cheat_warn), " <AC> %s: type = %d, code = %d, code2 = %d, count = %d",pData[playerid][pName],type, code, code2, count);
-	ABroadCast(COLOR_YELLOW,cheat_warn,1);
+	if(count == 2)
+	{
+		new cheat_warn[123];
+		format(cheat_warn, sizeof(cheat_warn), " <AC> %s: type = %d, code = %d, code2 = %d, count = %d",pData[playerid][pName],type, code, code2, count);
+		ABroadCast(COLOR_YELLOW,cheat_warn,1);
+	}
 }
 CMD:admin(playerid, params[])
 {
@@ -39326,7 +39395,7 @@ CMD:find(playerid, params[])
 	if(sscanf(params, "u",params[0])) return SCM(playerid, COLOR_WHITE, " Введите: /find [id]");
 	if(!IsPlayerConnected(params[0])) return true;
 	if(params[0] == playerid) return SCM(playerid, COLOR_GREY, " [Ошибка]  Вы указали свой ID");
-	if(CallInfo[params[0]][callused] == 0 || PhoneOnline[params[0]] > 0) return SCM(playerid,COLOR_GREY," Не удается соединиться!");
+	if(PhoneOnline[params[0]] > 0) return SCM(playerid,COLOR_GREY," Не удается соединиться!");
 	if(pData[params[0]][pWantedLevel] < 1) return SCM(playerid, COLOR_GREY, " Этот человек не в розыске!");
 	
 	{
