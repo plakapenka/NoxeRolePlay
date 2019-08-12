@@ -117,7 +117,7 @@ new PickNames[256],PickName[7][32],PickDate,PickTimes[128],PickTime[7], Pick = 0
 //#define job_taxi 0
 
 #define job_lvl(%0) (floatround(%0/100,floatround_floor)+1)
-
+#define GetMoney(%0) pData[%0][pCash]
 
 #define INVALID_HOUSE_ID 2288
 #define INVALID_KVARTIRA_KEY 78855
@@ -4019,7 +4019,6 @@ new lsnewscar[6], lvnewscar[6], lvpdcar[18];
 new liccar[10], hotdogcar[2], mehanik[13], rentcarvip[9], rentcarsf[7], rentcarls[9], rentcarlv[18], medicsls[6],medicsls1[6], medicslv[9];
 new sapdcar[20], fbicar[17],cnncar[5],sfpdcar[21],medmav,mavlic,cnnmav,armycarsf[29], yakcar[15],ruscar[15],govcar[8], lcncar[14], medicssf[21], armcar[34], faggio[6], gunscar[NUMBER_OF_ARMYTRUCKS], grovecar[7], ballascar[7], coronoscar[7], vagoscar[7],rifacar[7];
 new lsacar[16], lsacarvert[1];
-new hamccar[11], wmccar[11], pmccar[11];
 
 
 //////////////////////////////
@@ -4083,17 +4082,7 @@ enum frInfo
 	fGrove,
 	fAztek,
 	fRifa,
-	fKazna,
-	fSsmc,
-	fHamc,
-	fOmc,
-	fWmc,
-	fHwmc,
-	fFsmc,
-	fPmc,
-	fMmc,
-	fVmc,
-	fBmc
+	fKazna
 };
 new MafiaBank[1][nInfo];
 new FracBank[1][frInfo];
@@ -4231,37 +4220,8 @@ publics: IsVehicleOccupied(vehicleid)
 	return -1;
 }
 
-/*publics: DiceOff()
-{
-	foreach(new i: Player)
-	{
-		if(OpustitRuki[i] == 1)
-		{
-			OpustitRuki[i] = 0;
-			if(IsPlayerAttachedObjectSlotUsed(i,1)) RemovePlayerAttachedObject(i,1),SetPlayerSpecialAction (i, SPECIAL_ACTION_NONE),ApplyAnimation(i,"GANGS","hndshkba",4.1,0,1,1,0,1,1);// забрали кубик
-		}
-	}
-}*/
 publics: AddictionTimer(playerid) return SetPlayerWeather(playerid,ServWeather);
 
-
-stock IsVehicleInWater(vehicleid)
-{
-	new Float:water_areas[][] =
-	{
-		{25.0,  2313.0, -1417.0,        23.0},
-		{15.0,  1280.0, -773.0,         1082.0},
-		{15.0,  1279.0, -804.0,         86.0},
-		{20.0,  1094.0, -674.0,         111.0},
-		{26.0,  194.0,  -1232.0,        76.0},
-		{25.0,  2583.0, 2385.0,         15.0},
-		{25.0,  225.0,  -1187.0,        73.0},
-		{50.0,  1973.0, -1198.0,        17.0}
-	};
-	for(new t=0; t < sizeof water_areas; t++)
-	if(GetVehicleDistanceFromPoint(vehicleid,water_areas[t][1],water_areas[t][2],water_areas[t][3]) <= water_areas[t][0]) return true;
-	return false;
-}
 stock CaptureTextDraws(playerid) // killlist для банд
 {
 	Capture[playerid] = CreatePlayerTextDraw(playerid,39.824317, 223.416671, "~y~kills~n~~n~~g~Rifa:~w~0~n~~r~Aztec:~w~0");
@@ -4877,19 +4837,7 @@ new Float:kvar_pos[][][] ={
 		{2201.0579,-1188.6949,1029.7969}
 	}
 };
-enum pMatss
-{
-	gBallas,
-	gVagos,
-	gGrove,
-	gAztek,
-	gRifa,
-	bHells,
-	bWarlocks,
-	bPagans,
-};
-//new Furi[1][pMatss];
-new bFuri[1][pMatss][4]; // [0] - Материалы, [1] - Продукты, [2] - Бензин, [3] Дальнобой товары.
+
 new MatHaul[NUMBER_OF_ARMYTRUCKS];
 new MatsGang[5];
 
@@ -6882,7 +6830,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(strval(inputtext) < 1000 || strval(inputtext) > 1000000)
 				return  SCM(playerid,COLOR_RED,"Сумма ставки от 1000 до 1.000.000!");
 		
-			if(strval(inputtext) > pData[playerid][pCash])
+			if(strval(inputtext) > GetMoney(playerid))
 				return SCM(playerid,COLOR_RED,"У вас недостаточно денег!");
 
 			new wheel;
@@ -6896,7 +6844,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        WheelBetMoney[playerid] = strval(inputtext);
 	        WheelTimer[wheel] = SetTimerEx("WheelTooo",200,1,"d",wheel);
 	        SendMes(playerid, COLOR_BLUEGREEN, " Ваша ставка $%d", WheelBetMoney[playerid]);
-	        pData[playerid][pCash] -= WheelBetMoney[playerid];
+	        GiveMoney(playerid, -WheelBetMoney[playerid]);
 	        PlayerPlaySound(playerid, 4200, 0.0,0.0,0.0);
 	        return 1;
 	        
@@ -6963,7 +6911,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 			if(response) {      // Если согласен
 				if(!pData[givep][pLogin]) return SCM(playerid,COLOR_GREY," Игрок оффлайн");
-				if(pData[playerid][pCash] < cenabenza[givep]) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+				if(GetMoney(playerid) < cenabenza[givep]) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
 
 				new car 	= GetPlayerVehicleID(playerid);
 				new Fuelstr[123];
@@ -6977,7 +6925,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				format(Fuelstr, sizeof Fuelstr, " ~r~-%i", cenabenza[givep]);
 				GameTextForPlayer(playerid, Fuelstr, 5000, 1);
 
-				pData[playerid][pCash] 					-= cenabenza[givep];
+				GiveMoney(playerid, -cenabenza[givep]);
 				BizzInfo[gcontract[givep]][bTill] 		+= cenabenza[givep]/2;
 				BizzPay[gcontract[givep]] 				+= cenabenza[givep]/2;
 				BizzInfo[gcontract[givep]][bProducts] 	-= 150;
@@ -6995,7 +6943,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				SetVehicleHealth(vehicleid, 1000.0);
 				RepairVehicle(vehicleid);
 
-				pData[playerid][pCash]  -= GetPVarInt(playerid, "repairprice");
+				GiveMoney(playerid, -GetPVarInt(playerid, "repairprice"));
 				pData[givep][pPayCheck] += GetPVarInt(playerid, "repairprice");
 
 				new str[100];
@@ -7039,7 +6987,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			 ///// тут
     		new TAXI_RENT_PRICE = g_tInfo[id][e_iPrice] * (listitem+1);
     		////
-		    if(TAXI_RENT_PRICE > pData[playerid][pCash])
+		    if(TAXI_RENT_PRICE > GetMoney(playerid))
 	    		return SCM(playerid, COLOR_GRAD1, " У вас недостаточно средств!");
 
 			new szQuery[0xFF];
@@ -7047,7 +6995,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			mysql_query(DATABASE, szQuery);
 
 			SendMes(playerid, 0x6495EDFF, "Вы взяли такси в аренду за %d$", TAXI_RENT_PRICE);
-   			pData[playerid][pCash] -= TAXI_RENT_PRICE;
+
+   			GiveMoney(playerid, -TAXI_RENT_PRICE);
 		   	new szPrice[12];
 		   	format(szPrice, 12, "~r~-%d",TAXI_RENT_PRICE);
 		    GameTextForPlayer(playerid, szPrice, 3000, 1);
@@ -7064,14 +7013,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    if (!response)return 1;
 		    
 	        if(listitem == 0) {
-	            if(pData[playerid][pCash] < GetPVarInt(playerid,"FreePrice")) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
-				pData[playerid][pCash] -= GetPVarInt(playerid,"FreePrice");
-				pData[GetPVarInt(playerid,"FreeOffer")][pCash]+= GetPVarInt(playerid,"FreePrice");
+	            if(GetMoney(playerid) < GetPVarInt(playerid,"FreePrice")) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+				
+				GiveMoney(playerid, -GetPVarInt(playerid,"FreePrice"));
+				GiveMoney(GetPVarInt(playerid,"FreeOffer"), GetPVarInt(playerid,"FreePrice"));
 	        }
 	        else if(listitem == 1) {
 	            if(pData[playerid][pBank] < GetPVarInt(playerid,"FreePrice")) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
 				pData[playerid][pBank] -= GetPVarInt(playerid,"FreePrice");
-				pData[GetPVarInt(playerid,"FreeOffer")][pCash]+= GetPVarInt(playerid,"FreePrice");
+				pData[GetPVarInt(playerid,"FreeOffer")][pPayCheck]+= GetPVarInt(playerid,"FreePrice");
 	        }
 	        else if(listitem == 2) {
 	            SCM(playerid, 0x6495EDFF, " Вы отказались от услуг адвоката");
@@ -7915,10 +7865,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	case 8454:
 		{
 			if(!response) return true;
-			if(pData[playerid][pCash] < strlen(ReportQ[playerid])*addd[0]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
+			if(GetMoney(playerid) < strlen(ReportQ[playerid])*addd[0]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
 			if(TOTALADVERT[0] >= 15) return SendClientMessage(playerid,COLOR_GREY," Список объявлений заполнен. Попробуйте подать объявление позже.");
-			pData[playerid][pCash] -= strlen(ReportQ[playerid])*addd[0];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+	
+			GiveMoney(playerid, -strlen(ReportQ[playerid])*addd[0]);
 			FracBank[0][fLsnews] += strlen(ReportQ[playerid])*addd[0];
 			TOTALADVERT[0] ++;
 			AdvertInfo[TOTALADVERT[0]][0][adPhone] = pData[playerid][pPnumber];
@@ -7936,10 +7886,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	case 8455:
 		{
 			if(!response) return true;
-			if(pData[playerid][pCash] < strlen(ReportQ[playerid])*addd[1]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
+			if(GetMoney(playerid) < strlen(ReportQ[playerid])*addd[1]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
 			if(TOTALADVERT[1] >= 15) return SendClientMessage(playerid,COLOR_GREY," Список объявлений заполнен. Попробуйте подать объявление позже.");
-			pData[playerid][pCash] -= strlen(ReportQ[playerid])*addd[1];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		
+			GiveMoney(playerid, -strlen(ReportQ[playerid])*addd[1]);
 			FracBank[0][fSfnews] += strlen(ReportQ[playerid])*addd[1];
 			TOTALADVERT[1] ++;
 			AdvertInfo[TOTALADVERT[1]][1][adPhone] = pData[playerid][pPnumber];
@@ -7957,10 +7907,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	case 8456:
 		{
 			if(!response) return true;
-			if(pData[playerid][pCash] < strlen(ReportQ[playerid])*addd[2]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
+			if(GetMoney(playerid) < strlen(ReportQ[playerid])*addd[2]) return SendClientMessage(playerid, COLOR_WHITE,  " У Вас не достаточно денег");
 			if(TOTALADVERT[2] >= 15) return SendClientMessage(playerid,COLOR_GREY," Список объявлений заполнен. Попробуйте подать объявление позже.");
-			pData[playerid][pCash] -= strlen(ReportQ[playerid])*addd[2];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+	
+			GiveMoney(playerid, -strlen(ReportQ[playerid])*addd[2]);
 			FracBank[0][fLvnews] += strlen(ReportQ[playerid])*addd[2];
 			TOTALADVERT[2] ++;
 			AdvertInfo[TOTALADVERT[2]][2][adPhone] = pData[playerid][pPnumber];
@@ -7988,7 +7938,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 			if(!response)
 			{
-				pData[playerid][pCash] += ShopCar[GetPVarInt(playerid,"randcar")][1]/2;
+				GiveMoney(playerid, ShopCar[GetPVarInt(playerid,"randcar")][1]/2);
 				SendMes(playerid,COLOR_GOLD," Вы получаете %i вирт за выигранный автомобиль",ShopCar[GetPVarInt(playerid,"randcar")][1]/2);
 				
 				format(format_string, 150, "UPDATE `gifts` SET `name` = '%s', `use` = '1', `result` = '%i' WHERE `code` = '%s'",pData[playerid][pName],ShopCar[GetPVarInt(playerid,"randcar")][1]/2, pData[playerid][pRoolete]);
@@ -8024,7 +7974,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 			if(!response)
 			{
-				pData[playerid][pCash] += 2500;
+				GiveMoney(playerid, 2500);
 				SendClientMessage(playerid,COLOR_GOLD," Вы получаете 2500 вирт за выигранный скин");
 				
 				format(format_string, 150, "UPDATE `gifts` SET `name` = '%s', `use` = '1', `result` = '2500' WHERE `code` = '%s'",pData[playerid][pName], pData[playerid][pRoolete]);
@@ -8144,9 +8094,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			default:
 				{
 					if(MatchInfo[MatchInfo[listitem-1][mID]][mPlayer_1] == -1) return true;
-					if(MatchInfo[MatchInfo[listitem-1][mID]][mPrice] > pData[playerid][pCash]) return SendClientMessage(playerid,COLOR_GREY,"Для участия в состязание недостаточно денег.");
-					pData[playerid][pCash] -= MatchInfo[MatchInfo[listitem-1][mID]][mPrice];
-					
+					if(MatchInfo[MatchInfo[listitem-1][mID]][mPrice] > GetMoney(playerid)) return SendClientMessage(playerid,COLOR_GREY,"Для участия в состязание недостаточно денег.");
+				
+					GiveMoney(playerid, -MatchInfo[MatchInfo[listitem-1][mID]][mPrice]);
 					pData[playerid][pDuelIDP] = MatchInfo[MatchInfo[listitem-1][mID]][mPlayer_1];
 					pData[MatchInfo[MatchInfo[listitem-1][mID]][mPlayer_1]][pDuelIDP] = playerid;
 					pData[MatchInfo[MatchInfo[listitem-1][mID]][mPlayer_1]][pDuelID] = pData[playerid][pDuelID] = MatchInfo[MatchInfo[listitem-1][mID]][mPrice];
@@ -8251,7 +8201,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else if(!(1000 <= nimbers <= 100000)) return ShowPlayerDialog(playerid, 2123, DIALOG_STYLE_INPUT, "{FFFFFF}Ставка | {ae433d}Дуэль","{FFFFFF}Введите уровень ставки:\nПримечания:\n\
 			- Уровень ставки не может быть ниже 1000\n\
 			- Уровень ставки не может быть выше 100000\n", "Выбрать", "Назад");
-			else if(nimbers > pData[playerid][pCash])
+			else if(nimbers > GetMoney(playerid))
 			{
 				MatchInfo[pData[playerid][pDuelID]][mPlayer_1] = MatchInfo[pData[playerid][pDuelID]][mZone] = -1;
 				pData[playerid][pDuelID] = -1;
@@ -8269,8 +8219,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			- Уровень ставки не может быть выше 100000\n", "Выбрать", "Назад");
 			
 			MatchInfo[pData[playerid][pDuelID]][mZone] = listitem;
-			pData[playerid][pCash] -= MatchInfo[pData[playerid][pDuelID]][mPrice];
 			
+			GiveMoney(playerid, -MatchInfo[pData[playerid][pDuelID]][mPrice]);
 			SendClientMessage(playerid,COLOR_GREY," Отлично! Вы создали состязание.");
 			return true;
 		}
@@ -8424,8 +8374,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(PlayerToPoint(15, playerid,1630.0807,2323.3582,10.8203) && car_prods[GetPlayerVehicleID(playerid)][0] != 0)
 			{
 				if(car_prods[GetPlayerVehicleID(playerid)][0] < strval(inputtext)) return SCM(playerid,COLOR_GREY," В машине недостаточно урожая");
-				pData[playerid][pCash]+=strval(inputtext)*34;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		
+				GiveMoney(playerid, strval(inputtext)*34);
 				car_prods[GetPlayerVehicleID(playerid)][0] -= strval(inputtext);
 				format(YCMDstr, 124, "{FFFFFF}Склад с урожаем\n\nУрожая продано: {0C9599}%i\n{FFFFFF}Цена: {0C9599}%i вирт", strval(inputtext), strval(inputtext)*UrojSell);
 				ShowPlayerDialog(playerid,9998,DIALOG_STYLE_MSGBOX, " ", YCMDstr, "Закрыть", "");
@@ -8433,8 +8383,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else if(PlayerToPoint(15, playerid,2178.3220,-1660.2120,14.9782) && car_prods[GetPlayerVehicleID(playerid)][1] != 0)
 			{
 				if(car_prods[GetPlayerVehicleID(playerid)][1] < strval(inputtext)) return SCM(playerid,COLOR_GREY," В машине  Недостаточно наркотиков");
-				pData[playerid][pCash]+=strval(inputtext)*34;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, strval(inputtext)*34);
 				car_prods[GetPlayerVehicleID(playerid)][1] -= strval(inputtext);
 				format(YCMDstr, 124, "{FFFFFF}Наркопритон\n\nНаркотиков продано: {0C9599}%i\n{FFFFFF}Цена: {0C9599}%i вирт", strval(inputtext), strval(inputtext)*NarkSell);
 				ShowPlayerDialog(playerid,9998,DIALOG_STYLE_MSGBOX, " ", YCMDstr, "Закрыть", "");
@@ -8488,11 +8437,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				if(!GetPVarInt(playerid,"CarOffer")) return true;
 			
 				if(!ProxDetectorS(8.0, playerid, i)) return SCM(playerid, COLOR_GREY, " Игрок должен находиться рядом с вами"), CarPrice[i] = 0, CarOffer[i] = 9999, DeletePVar(playerid,"CarOffer");
-				if(pData[i][pCash] < CarPrice[i]) return SCM(playerid, COLOR_GREY, " У игрока нет столько денег"), CarPrice[i] = 0, CarOffer[i] = 9999, DeletePVar(playerid,"CarOffer");
-				pData[i][pCash] -= CarPrice[i];
-				pData[playerid][pCash] += CarPrice[i];
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
-				SetAccountInfo(i, pData[i][pCash], "pCash");
+				if(GetMoney(i) < CarPrice[i]) return SCM(playerid, COLOR_GREY, " У игрока нет столько денег"), CarPrice[i] = 0, CarOffer[i] = 9999, DeletePVar(playerid,"CarOffer");
+			
+				GiveMoney(i, -CarPrice[i]);
+				GiveMoney(playerid, CarPrice[i]);
 				new previous_data;
 				previous_data = CarInfo[playerid][carModel][GetPVarInt(playerid,"chosencar")];
 				CarInfo[playerid][carModel][GetPVarInt(playerid,"chosencar")] = CarInfo[i][carModel][GetPVarInt(i,"chosencar")];
@@ -8600,7 +8548,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(FarmInfo[null][fProds] < strval(inputtext)) 
 				return SCM(playerid,COLOR_GREY," На складе фермы недостаточно урожая");
 
-			if(pData[playerid][pCash] < strval(inputtext)*FarmInfo[null][fProds_Price]) 
+			if(GetMoney(playerid) < strval(inputtext)*FarmInfo[null][fProds_Price]) 
 				return SCM(playerid,COLOR_GREY," Недостаточно средств");
 			
 
@@ -8643,8 +8591,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			FarmInfo[null][fProds] -= strval(inputtext);
 			FarmStatPay[null][5] += strval(inputtext);
 			FarmStatDay[null][5] += strval(inputtext);
-			pData[playerid][pCash]-=strval(inputtext)*FarmInfo[null][fProds_Price];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		
+			GiveMoney(playerid,-strval(inputtext)*FarmInfo[null][fProds_Price]);
 			FarmStatPay[null][8] += strval(inputtext)*FarmInfo[null][fProds_Price];
 			FarmStatDay[null][8] += strval(inputtext)*FarmInfo[null][fProds_Price];
 			return FarmInfo[null][fBank]+=strval(inputtext)*FarmInfo[null][fProds_Price];
@@ -8679,8 +8627,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			FarmStatPay[null][6] += strval(inputtext)*FarmInfo[null][fGrain_Price];
 			FarmStatDay[null][6] += strval(inputtext)*FarmInfo[null][fGrain_Price];
 			FarmInfo[null][fGrain]+=strval(inputtext);
-			pData[playerid][pCash]+=strval(inputtext)*FarmInfo[null][fGrain_Price];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+	
+			GiveMoney(playerid,strval(inputtext)*FarmInfo[null][fGrain_Price]);
 			car_data[car][car_gruz]-=strval(inputtext);
 			FarmStatPay[null][4] += strval(inputtext);
 			FarmStatDay[null][4] += strval(inputtext);
@@ -8746,11 +8694,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!PlayerToPoint(10.0,playerid,2191.9878,-2262.4209,13.6586)) 
 				return SCM(playerid,COLOR_GREY," В данном месте нельзя закупить зерно!");
 
-			if(pData[playerid][pCash] < (cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) ))
+			if(GetMoney(playerid) < (cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) ))
 				return SCM(playerid, COLOR_WHITE," У вас не хватает денег!");
 
-			pData[playerid][pCash] -= (cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) );
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			GiveMoney(playerid,-(cnt_zerna*ZernBuy)-( ((cnt_zerna*ZernBuy)/100)*job_lvl(pData[playerid][job_skill][job_razvozchik]) ));
 
 			new Float:x, Float:y, Float:z;
 			GetVehicleParamsEx(newcar,engine,lights,alarm,doors,bonnet,boot,objective);
@@ -8862,8 +8809,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				for(new i = 1; i <= TOTALFARM; i++) if(IsPlayerInRangeOfPoint(playerid,20.0,FarmInfo[i][fCloakroom][0],FarmInfo[i][fCloakroom][1], FarmInfo[i][fCloakroom][2])) farm = i;
 				if(!farm) return SCM(playerid,COLOR_GREY," Вы должны находиться возле раздевалки у фермы!");
 				if(GetPVarInt(playerid,"farm_id") != farm) return SCM(playerid,COLOR_GREY," Вы не начинали работу на данной ферме!");
-				pData[playerid][pCash] += GetPVarInt(playerid,"farm_zp");
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+	
+				GiveMoney(playerid,GetPVarInt(playerid,"farm_zp"));
 				if(!GetPVarInt(playerid,"Fraction_Duty")) SetPlayerSkin(playerid,pData[playerid][pChar][0]);
 				else SetPlayerSkin(playerid,pData[playerid][pModel]);
 				DisablePlayerCheckpoint(playerid);
@@ -9575,19 +9522,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			switch(RouletStol[playerid])
 			{
 			case 1,5,12: {
-					if(strval(inputtext) < 500 || strval(inputtext) > 5000 || pData[playerid][pCash] < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 500 вирт\nМаксимальняа ставка: 5000 вирт\nВведите сумму:","Играть","Закрыть"); }
+					if(strval(inputtext) < 500 || strval(inputtext) > 5000 || GetMoney(playerid) < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 500 вирт\nМаксимальняа ставка: 5000 вирт\nВведите сумму:","Играть","Закрыть"); }
 			case 2,7,10: {
-					if(strval(inputtext) < 2000 || strval(inputtext) > 20000 || pData[playerid][pCash] < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 2000 вирт\nМаксимальняа ставка: 20000 вирт\nВведите сумму:","Играть","Закрыть"); }
+					if(strval(inputtext) < 2000 || strval(inputtext) > 20000 || GetMoney(playerid) < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 2000 вирт\nМаксимальняа ставка: 20000 вирт\nВведите сумму:","Играть","Закрыть"); }
 			case 3,8,11: {
-					if(strval(inputtext) < 5000 || strval(inputtext) > 50000 || pData[playerid][pCash] < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 5000 вирт\nМаксимальняа ставка: 50000 вирт\nВведите сумму:","Играть","Закрыть"); }
+					if(strval(inputtext) < 5000 || strval(inputtext) > 50000 || GetMoney(playerid) < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 5000 вирт\nМаксимальняа ставка: 50000 вирт\nВведите сумму:","Играть","Закрыть"); }
 			case 4,6,9: {
-					if(strval(inputtext) < 10000 || strval(inputtext) > 100000 || pData[playerid][pCash] < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 10000 вирт\nМаксимальняа ставка: 100000 вирт\nВведите сумму:","Играть","Закрыть"); }
+					if(strval(inputtext) < 10000 || strval(inputtext) > 100000 || GetMoney(playerid) < strval(inputtext)) return ShowPlayerDialog(playerid,5576,DIALOG_STYLE_INPUT,"Ставка","Минимальная ставка: 10000 вирт\nМаксимальняа ставка: 100000 вирт\nВведите сумму:","Играть","Закрыть"); }
 			}
 			RouletBet[playerid] = strval(inputtext);
 			GetCasinoNumber(playerid);
-			pData[playerid][pCash]-=strval(inputtext);
-			MoneyLog(pData[playerid][pName],"None", strval(inputtext), "(-)RouletBet");
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			GiveMoney(playerid, -strval(inputtext));
+			
 			DestroyObject(RouletObject[playerid]);
 			new obj = CreateObject(random(3) + 1930,GetPVarFloat(playerid,"RX"),GetPVarFloat(playerid,"RY"),GetPVarFloat(playerid,"RZ"),0.00,0.00,0.00);
 			SetObjectPos(obj,GetPVarFloat(playerid,"RX"),GetPVarFloat(playerid,"RY"),GetPVarFloat(playerid,"RZ"));
@@ -9611,7 +9557,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	case 5490:
 		{
 			if(!response) return true;
-			if(RouletPlay[RouletStol[playerid]] == false) pData[playerid][pCash]+=RouletBet[playerid], SetAccountInfo(playerid, pData[playerid][pCash], "pCash"), MoneyLog(pData[playerid][pName],"None", RouletBet[playerid], "(+)ResetRouletBet");
+			if(RouletPlay[RouletStol[playerid]] == false) GiveMoney(playerid, RouletBet[playerid]);
 			DestroyObject(RouletObject[playerid]);
 			RouletBet[playerid] = 0;
 			RouletStol[playerid] = 0;
@@ -10120,8 +10066,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						if(pData[playerid][pFishes] < 2) return SCM(playerid,0x81DA99AA," Недостаточно рыбы");
 						if (PlayerToPoint(10, playerid,BizzInfo[i][bBarX], BizzInfo[i][bBarY], BizzInfo[i][bBarZ]) && BizzInfo[i][bType] == 2 && GetPlayerVirtualWorld(playerid) == BizzInfo[i][bVirtualWorld])
 						{
-							pData[playerid][pCash] +=floatround(pData[playerid][pFishes])*5;
-							SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+							GiveMoney(playerid, floatround(pData[playerid][pFishes])*5);
 							if(BizzInfo[i][bProducts]+floatround(pData[playerid][pFishes]) < 2000) BizzInfo[i][bProducts]+=floatround(pData[playerid][pFishes]);
 							else BizzInfo[i][bProducts]=2000;
 							format(cString,64, " Вы продали %.2f кг. рыбы. Выручка: %i вирт",pData[playerid][pFishes],floatround(pData[playerid][pFishes]));
@@ -10157,57 +10102,56 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 			case 0:
 				{
-					if(pData[playerid][pCash] < 500) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 500) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 1:
 				{
-					if(pData[playerid][pCash] < 300) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 300) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7928, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 2:
 				{
-					if(pData[playerid][pCash] < 750) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 750) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7929, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 3:
 				{
-					if(pData[playerid][pCash] < 500) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 500) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7930, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 4:
 				{
-					if(pData[playerid][pCash] < 250) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 250) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7931, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 5:
 				{
-					if(pData[playerid][pCash] < 500) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 500) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7932, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 6:
 				{
-					if(pData[playerid][pCash] < 500) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 500) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7933, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 7:
 				{
-					if(pData[playerid][pCash] < 1000) return SCM(playerid,-1,"  Недостаточно денег");
+					if(GetMoney(playerid) < 1000) return SCM(playerid,-1,"  Недостаточно денег");
 					ShowPlayerDialog(playerid, 7934, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена");
 					return true;
 				}
 			case 8:
 				{
-					if(pData[playerid][pCash] < 1200) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1200; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1200) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1200);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,2,1); // Выдаём патроны/оружие
@@ -10220,9 +10164,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 9:
 				{
-					if(pData[playerid][pCash] < 1000) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1000; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1000) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1000);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,5,1); // Выдаём патроны/оружие
@@ -10235,9 +10178,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 10:
 				{
-					if(pData[playerid][pCash] < 1200) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1200; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1200) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1200);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,6,1); // Выдаём патроны/оружие
@@ -10250,9 +10192,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 11:
 				{
-					if(pData[playerid][pCash] < 1300) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1300; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1300) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1300);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,7,1); // Выдаём патроны/оружие
@@ -10265,9 +10206,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 12:
 				{
-					if(pData[playerid][pCash] < 2500) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 2500; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 2500) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -2500);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,8,1); // Выдаём патроны/оружие
@@ -10280,9 +10220,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 13:
 				{
-					if(pData[playerid][pCash] < 1500) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1500; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1500) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1500);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,10,1); // Выдаём патроны/оружие
@@ -10295,9 +10234,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 14:
 				{
-					if(pData[playerid][pCash] < 3000) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 3000; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 3000) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -3000);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,14,1); // Выдаём патроны/оружие
@@ -10310,9 +10248,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 15:
 				{
-					if(pData[playerid][pCash] < 1300) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1300; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1300) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1300);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,15,1); // Выдаём патроны/оружие
@@ -10325,9 +10262,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 16:
 				{
-					if(pData[playerid][pCash] < 1000) return SCM(playerid,-1," Недостаточно денег");
-					pData[playerid][pCash]-= 1000; // Отнимаем деньги
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+					if(GetMoney(playerid) < 1000) return SCM(playerid,-1," Недостаточно денег");
+					GiveMoney(playerid, -1000);
 					switch(booston)
 					{
 					case 0:GivePlayerWeaponEx(playerid,46,1); // Выдаём патроны/оружие
@@ -10346,10 +10282,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*500; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				
+				GiveMoney(playerid, -strval(inputtext)*500);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,24,gungins); // Выдаём патроны/оружие
@@ -10371,10 +10307,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7928, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*300) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*300) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-= strval(inputtext)*300; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+
+				GiveMoney(playerid, -strval(inputtext)*300);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,23,gungins); // Выдаём патроны/оружие
@@ -10396,10 +10332,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7929, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*750) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*750) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*750; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+
+				GiveMoney(playerid, -strval(inputtext)*750);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,33,gungins); // Выдаём патроны/оружие
@@ -10421,10 +10357,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7930, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*500; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -strval(inputtext)*500);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,25,gungins); // Выдаём патроны/оружие
@@ -10446,10 +10381,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7931, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*250) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*250) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*250; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -strval(inputtext)*250);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,29,gungins); // Выдаём патроны/оружие
@@ -10471,10 +10405,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7932, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*500; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -strval(inputtext)*500);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,30,gungins); // Выдаём патроны/оружие
@@ -10496,10 +10429,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7933, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*500) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*500; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -strval(inputtext)*500);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,31,gungins); // Выдаём патроны/оружие
@@ -10521,10 +10453,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new gungins = strval(inputtext);
 				if(!strval(inputtext)) return ShowPlayerDialog(playerid, 7934, 1, "Патроны", "Введите количество патронов\nкоторые будут в комплекте с оружием.", "Купить", "отмена"); // Если игрок оставил пустое окно выводим его заного
-				if(pData[playerid][pCash] < strval(inputtext)*1000) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
+				if(GetMoney(playerid) < strval(inputtext)*1000) return SCM(playerid,-1," Недостаточно денег"); // Проверка хватает ли денег у игрока
 				if(gungins > 999 || gungins < 0){ ShowPlayerDialog(playerid, 7927, 1, "Патроны", "Количество патронов не должно быть\nменьше 1 или более 999", "Купить", "отмена");return true;}
-				pData[playerid][pCash]-=strval(inputtext)*1000; // Отнимаем деньги
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -strval(inputtext)*1000);
 				switch(booston)
 				{
 				case 0:GivePlayerWeaponEx(playerid,17,gungins); // Выдаём патроны/оружие
@@ -12185,10 +12116,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 0,1:
 					{
 						if(BizzInfo[h][bProducts] < 30) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 30);
-						pData[playerid][pCash] -= BizzInfo[h][bPrice];
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]);
+		
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						BizzInfo[h][bProducts] -= 30;
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice];
@@ -12197,10 +12128,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 2,3:
 					{
 						if(BizzInfo[h][bProducts] < 60) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*2) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*2) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 60);
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*2;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*2);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						BizzInfo[h][bProducts] -= 60;
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*2;
@@ -12209,10 +12139,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 4,5:
 					{
 						if(BizzInfo[h][bProducts] < 90) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*3) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*3) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
       					UpdatePlayerHunger(playerid, 90);
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*3;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*3);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						BizzInfo[h][bProducts] -= 90;
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*3;
@@ -12241,12 +12170,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 0:
 					{
 						if(BizzInfo[h][bProducts] < 10) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice];
 						BizzPay[h] += BizzInfo[h][bPrice];
 						BizzInfo[h][bProducts] -= 5;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice];
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]);
 						new randphone = 100000 + random(899999);
 						pData[playerid][pPnumber] = randphone;
 						SetAccountInfo(playerid, pData[playerid][pPnumber], "pPnumber");
@@ -12255,12 +12183,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 1:
 					{
 						if(BizzInfo[h][bProducts] < 20) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*2) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*2) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*2;
 						BizzPay[h] += BizzInfo[h][bPrice]*2;
 						BizzInfo[h][bProducts] -= 20;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*2;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*2);
 						pData[playerid][pDirectory] = 1;
 						SetAccountInfo(playerid, pData[playerid][pDirectory], "pDirectory");
 						SCM(playerid, COLOR_BLUE, " Телефонная книга приобретена!");
@@ -12269,7 +12196,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 2:
 					{
 						if(BizzInfo[h][bProducts] < 30) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						if(pData[playerid][pPHouseKey] != INVALID_HOUSE_ID)
 						{
 							if(HouseInfo[pData[playerid][pPHouseKey]][hHel] >= 500) 
@@ -12283,67 +12210,61 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*3;
 						BizzPay[h] += BizzInfo[h][bPrice]*3;
 						BizzInfo[h][bProducts] -= 15;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*3;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*3);
 					}
 				case 3:
 					{
 						if(BizzInfo[h][bProducts] < 30) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*3;
 						BizzPay[h] += BizzInfo[h][bPrice]*3;
 						BizzInfo[h][bProducts] -= 30;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*3;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*3);
 						GivePlayerWeaponEx(playerid, 43, 10);
 						SCM(playerid, COLOR_BLUE, " Вы купили фотоаппарат");
 					}
 				case 4:
 					{
 						if(BizzInfo[h][bProducts] < 30) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*3;
 						BizzPay[h] += BizzInfo[h][bPrice]*3;
 						BizzPay[h] += BizzInfo[h][bPrice]*3;
 						BizzInfo[h][bProducts] -= 30;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*3;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*3);
 						GivePlayerWeaponEx(playerid, 14, 1);
 						SCM(playerid, COLOR_BLUE, " Вы купили цветы");
 					}
 				case 5:
 					{
 						if(BizzInfo[h][bProducts] < 40) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*4;
 						BizzPay[h] += BizzInfo[h][bPrice]*4;
 						BizzInfo[h][bProducts] -= 20;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*4;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*4);
 						SetPVarInt(playerid,"fish_rod",1);
 						SCM(playerid, COLOR_BLUE, " Вы купили удочку");
 					}
 				case 6:
 					{
 						if(BizzInfo[h][bProducts] < 40) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*4;
 						BizzPay[h] += BizzInfo[h][bPrice]*4;
 						BizzInfo[h][bProducts] -= 20;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*4;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*4);
 						SetPVarInt(playerid,"fish_gear",GetPVarInt(playerid,"fish_gear")+10);
 						SCM(playerid, COLOR_BLUE, " Вы купили снасти. [10 шт.]");
 					}
 				case 7:
 					{
 						if(BizzInfo[h][bProducts] < 50) return SCM(playerid, COLOR_GREY, " Нет продуктов");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*5) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*5) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*5;
 						BizzPay[h] += BizzInfo[h][bPrice]*5;
 						BizzInfo[h][bProducts] -= 20;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*5;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*5);
 						SetPVarInt(playerid,"fish_sonar",1);
 						SCM(playerid, COLOR_BLUE, " Вы купили сонар");
 					}
@@ -12367,78 +12288,72 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 0..2:
 					{
 						if(BizzInfo[h][bProducts] < 10) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 30);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice];
 						BizzPay[h] += BizzInfo[h][bPrice];
 						BizzInfo[h][bProducts] -= 10;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice];
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
 				case 3..4:
 					{
 						if(BizzInfo[h][bProducts] < 20) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*2) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*2) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 30);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*2;
 						BizzPay[h] += BizzInfo[h][bPrice]*2;
 						BizzInfo[h][bProducts] -= 20;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*2;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*2);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
 				case 5..6:
 					{
 						if(BizzInfo[h][bProducts] < 30) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*3) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 60);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*3;
 						BizzPay[h] += BizzInfo[h][bPrice]*3;
 						BizzInfo[h][bProducts] -= 30;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*3;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*3);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
 				case 7:
 					{
 						if(BizzInfo[h][bProducts] < 40) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*4) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 60);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*4;
 						BizzPay[h] += BizzInfo[h][bPrice]*4;
 						BizzInfo[h][bProducts] -= 40;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*4;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*4);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
 				case 8..9:
 					{
 						if(BizzInfo[h][bProducts] < 50) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*5) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*5) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 90);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*5;
 						BizzPay[h] += BizzInfo[h][bPrice]*5;
 						BizzInfo[h][bProducts] -= 50;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*5;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*5);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
 				case 10:
 					{
 						if(BizzInfo[h][bProducts] < 60) return SCM(playerid, COLOR_GREY, " В баре нет напитков");
-						if(pData[playerid][pCash] < BizzInfo[h][bPrice]*6) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
+						if(GetMoney(playerid) < BizzInfo[h][bPrice]*6) return SCM(playerid, COLOR_GREY, " У вас нет столько денег");
 						UpdatePlayerHunger(playerid, 90);
 						BizzInfo[h][bTill] += BizzInfo[h][bPrice]*6;
 						BizzPay[h] += BizzInfo[h][bPrice]*6;
 						BizzInfo[h][bProducts] -= 60;
-						pData[playerid][pCash] -= BizzInfo[h][bPrice]*6;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -BizzInfo[h][bPrice]*6);
 						SendMes(playerid,COLOR_WHITE," «Сытость» пополнена до %i",pData[playerid][pSatiety]);
 						ApplyAnimation(playerid, "BAR", "dnk_stndF_loop",4.1,0,0,0,0,0,1);
 					}
@@ -12582,15 +12497,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 			if(response)
 			{
-				if(pData[playerid][pCash] <= 9000)
+				if(GetMoney(playerid) < 10000)
 				{
 					SCM(playerid, COLOR_GRAD2, "  У вас нет столько денег!");
 					RemovePlayerFromVehicle(playerid);
 					TogglePlayerControllable(playerid, 1);
 					return true;
 				}
-				pData[playerid][pCash] -= 10000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -10000);
 				job_car[playerid] = GetPlayerVehicleID(playerid);
 				TogglePlayerControllable(playerid, 1);
 				GameTextForPlayer(playerid,"~w~YOU HAVE HIRED THE CAR~n~GOOD LUCK ON ROAD", 5000, 3);
@@ -12608,15 +12522,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 			if(response)
 			{
-				if(pData[playerid][pCash] <= 1500)
+				if(GetMoney(playerid) < 1500)
 				{
 					SCM(playerid, COLOR_GRAD2, "  У вас нет столько денег!");
 					RemovePlayerFromVehicle(playerid);
 					TogglePlayerControllable(playerid, 1);
 					return true;
 				}
-				pData[playerid][pCash] -= 1500;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -1500);
 				job_car[playerid] = GetPlayerVehicleID(playerid);
 				TogglePlayerControllable(playerid, 1);
 				GameTextForPlayer(playerid,"~w~YOU HAVE HIRED THE CAR~n~GOOD LUCK ON ROAD", 5000, 3);
@@ -12634,15 +12547,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 			if(response)
 			{
-				if(pData[playerid][pCash] <= 10000)
+				if(GetMoney(playerid) <= 10000)
 				{
 					SCM(playerid, COLOR_GRAD2, "  У вас нет столько денег!");
 					RemovePlayerFromVehicle(playerid);
 					TogglePlayerControllable(playerid, 1);
 					return true;
 				}
-				pData[playerid][pCash] -= 10000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -10000);
+				
 				job_car[playerid] = GetPlayerVehicleID(playerid);
 				TogglePlayerControllable(playerid, 1);
 				GameTextForPlayer(playerid,"~w~YOU HAVE HIRED THE HELLICOPTER~n~GOOD LUCK IN FLIGHT", 5000, 3);
@@ -12682,9 +12595,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	case 9128:
 		{
 			if(!response) return RemovePlayerFromVehicle(playerid), TogglePlayerControllable(playerid, 1);
-			if(pData[playerid][pCash] < 500) return SCM(playerid, COLOR_GRAD2, "  У вас нет столько денег!"), RemovePlayerFromVehicle(playerid), TogglePlayerControllable(playerid, 1);
-			pData[playerid][pCash]-=500;
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			if(GetMoney(playerid) < 500) return SCM(playerid, COLOR_GRAD2, "  У вас нет столько денег!"), RemovePlayerFromVehicle(playerid), TogglePlayerControllable(playerid, 1);
+			GiveMoney(playerid, -500);
 			SetPVarInt(playerid,"rentcar_job",GetPlayerVehicleID(playerid));
 			job_car[playerid] = GetPlayerVehicleID(playerid);
 			new vehid = GetPlayerVehicleID(playerid) ;
@@ -12748,10 +12660,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(pData[playerid][pQuestL] == 1 && pData[playerid][pQuest] == 2) CheckQuest(playerid);
 			else
 			{
-				if(pData[playerid][pCash] < 500) return SCM(playerid, COLOR_GREY, " Не достаточно денег!");
+				if(GetMoney(playerid) < 500) return SCM(playerid, COLOR_GREY, " Не достаточно денег!");
 				GameTextForPlayer(playerid, "~r~-$500", 5000, 1);
-				pData[playerid][pCash]-= 500;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				GiveMoney(playerid, -500);
 				LessonStat[playerid] = 0;
 				LessonCar[playerid] = 1;
 				TakingLesson[playerid] = 1;
@@ -13528,9 +13439,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			new Float:health;
 			GetPlayerHealth(playerid, health);
 			if(health >= 100.0) return SCM(HealOffer[playerid], COLOR_GRAD1, " Этот человек здоров!");
-			if(pData[playerid][pCash] < HealPrice[playerid]) return SCM(HealOffer[playerid], COLOR_GREY, " У этого человека нет столько денег на руках!"),SCM(playerid,COLOR_GREY," У вас недостаточно денег");
-			pData[playerid][pCash] -= HealPrice[playerid];
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			if(GetMoney(playerid) < HealPrice[playerid]) return SCM(HealOffer[playerid], COLOR_GREY, " У этого человека нет столько денег на руках!"),SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+	
+			GiveMoney(playerid, -HealPrice[playerid]);
 			pData[HealOffer[playerid]][pPayCheck] += HealPrice[playerid];
 			SetAccountInfo(HealOffer[playerid], pData[playerid][pPayCheck], "pPayCheck");
 			PlayerPlaySound(playerid, 1150, 0.0, 0.0, 0.0);
@@ -13559,9 +13470,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!response) DeletePVar(playerid,"Licenses");
 			if(GetPVarInt(playerid,"Licenses") == 1)
 			{
-				if(pData[playerid][pCash] < 500) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=GetPVarInt(playerid,"MoneyLicenses");
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 500) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+
+				GiveMoney(playerid, -GetPVarInt(playerid,"MoneyLicenses"));
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=GetPVarInt(playerid,"MoneyLicenses")/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел водительские права. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13581,9 +13492,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			else if(GetPVarInt(playerid,"Licenses") == 2)
 			{
-				if(pData[playerid][pCash] < 10000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=10000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 10000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+	
+				GiveMoney(playerid, -10000);
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=10000/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел лицензию на воздушный траспорт. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13603,9 +13514,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			else if(GetPVarInt(playerid,"Licenses") == 3)
 			{
-				if(pData[playerid][pCash] < 2000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=2000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 2000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+
+				GiveMoney(playerid, -2000);
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=2000/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел лицензию на рыболовство. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13625,9 +13536,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			else if(GetPVarInt(playerid,"Licenses") == 4)
 			{
-				if(pData[playerid][pCash] < 5000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=5000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 5000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+				GiveMoney(playerid, -5000);
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=5000/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел лицензию на морской траспорт. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13647,9 +13557,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			else if(GetPVarInt(playerid,"Licenses") == 5)
 			{
-				if(pData[playerid][pCash] < 50000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=50000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 50000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+				GiveMoney(playerid, -50000);
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=50000/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел лицензию на оружие. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13669,9 +13578,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			else if(GetPVarInt(playerid,"Licenses") == 6)
 			{
-				if(pData[playerid][pCash] < 100000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
-				pData[playerid][pCash]-=100000;
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+				if(GetMoney(playerid) < 100000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+				GiveMoney(playerid, -100000);
 				pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck]+=100000/70;
 				SetAccountInfo(GetPVarInt(playerid,"PlayerSell"), pData[GetPVarInt(playerid,"PlayerSell")][pPayCheck], "pPayCheck");
 				format(string, 144, " Игрок %s приобрел лицензию на открытие бизнеса. Сумма добавлена к зарплате.",pData[playerid][pName]);
@@ -13701,8 +13609,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 			case 0:
 				{
-					//if(pData[playerid][pCash] < 500) return SCM(playerid, COLOR_GREY, " У вас Недостаточно денег");
-
 					if(PlayerLicenses(ChosenPlayer[playerid], LICENSES_GET, LIC_DRIVER)) return SCM(playerid, COLOR_GRAD1, " У данного игрока уже есть вод. права!");
 					if(pData[ChosenPlayer[playerid]][pLevel] <= 2) SetPVarInt(ChosenPlayer[playerid], "MoneyLicenses",500);
 					else if(pData[ChosenPlayer[playerid]][pLevel] <= 5) SetPVarInt(ChosenPlayer[playerid], "MoneyLicenses",5000);
@@ -13716,7 +13622,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 1:
 				{
-					//if(pData[playerid][pCash] < 10000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 					if(PlayerLicenses(ChosenPlayer[playerid], LICENSES_GET, LIC_HELICOPTER)) return SCM(playerid, COLOR_GRAD1, " У данного игрока уже есть эта лицензия!");
 					SetPVarInt(ChosenPlayer[playerid], "Licenses",2);
 					SendMes(playerid,COLOR_BLUE," Вы предложили %s купить лицензию на воздушный транспорт за 10000 вирт",pData[ChosenPlayer[playerid]][pName]);
@@ -13726,7 +13631,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 2:
 				{
-					//if(pData[playerid][pCash] < 2000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 					if(PlayerLicenses(ChosenPlayer[playerid], LICENSES_GET, LIC_FISHING)) return SCM(playerid, COLOR_GRAD1, " У данного игрока уже есть эта лицензия!");
 					SetPVarInt(ChosenPlayer[playerid], "Licenses",3);
 					SendMes(playerid,COLOR_BLUE," Вы предложили %s купить лицензию на рыболовство за 2000 вирт",pData[ChosenPlayer[playerid]][pName]);
@@ -13735,7 +13639,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 3:
 				{
-					//if(pData[playerid][pCash] < 5000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 					if(PlayerLicenses(ChosenPlayer[playerid], LICENSES_GET, LIC_BOAT)) return SCM(playerid, COLOR_GRAD1, " У данного игрока уже есть эта лицензия!");
 					SetPVarInt(ChosenPlayer[playerid], "Licenses",4);
 					SendMes(playerid,COLOR_BLUE," Вы предложили %s купить лицензию на морской транспорт за 5000 вирт",pData[ChosenPlayer[playerid]][pName]);
@@ -13745,7 +13648,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 4:
 				{
-					//if(pData[playerid][pCash] < 50000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 					if(PlayerLicenses(ChosenPlayer[playerid], LICENSES_GET, LIC_WEAPONS)) return	SCM(playerid, COLOR_GRAD1, " У данного игрока уже есть эта лицензия!");
 					if(pData[ChosenPlayer[playerid]][pLevel] < 2) return SCM(playerid,COLOR_GREY," Доступно игрокам со 2-го уровня");
 					SetPVarInt(ChosenPlayer[playerid], "Licenses",5);
@@ -13756,7 +13658,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			case 5:
 				{
-					//if(pData[playerid][pCash] < 100000) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 					if(!BGet(ChosenPlayer[playerid])) return	SCM(playerid, COLOR_GRAD1, " Игрок не имеет бизнеса!");
 					SetPVarInt(ChosenPlayer[playerid], "Licenses",6);
 					SendMes(playerid,COLOR_BLUE," Вы предложили %s купить лицензию на открытие бизнеса за 100000 вирт",pData[ChosenPlayer[playerid]][pName]);
@@ -14820,8 +14721,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    	return SendClientMessage(playerid, 0xf44336FF, "Мы не можем дать вам эту машину :c");
 			}
 
-			pData[playerid][pCash] -= g_tInfo[park_id][e_iPrice]*park_price;
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			GiveMoney(playerid, - g_tInfo[park_id][e_iPrice]*park_price);
 			TogglePlayerControllable(playerid, 1);
 			new szPrice[12];
 		   	format(szPrice, 12, "~r~-%d",g_tInfo[park_id][e_iPrice]*park_price);
@@ -14837,7 +14737,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				{
 					if(pData[playerid][pDLevel] > 14)
 					{
-						if(pData[playerid][pCash] < 15000)
+						if(GetMoney(playerid) < 15000)
 						{
 							SCM(playerid, COLOR_WHITE, " Не достаточно денег");
 							RemovePlayerFromVehicle(playerid);
@@ -14847,8 +14747,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						else
 						{
 							job_car[playerid] = car;
-							pData[playerid][pCash] -= 15000;
-							SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+							GiveMoney(playerid, -15000);
 							TogglePlayerControllable(playerid, 1);
 							return true;
 						}
@@ -14862,7 +14761,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				else if(car >= tanker_train[0] && car <= tanker_train[1])
 				{
-					if(pData[playerid][pCash] < 5000)
+					if(GetMoney(playerid) < 5000)
 					{
 						SCM(playerid, COLOR_WHITE, " Не достаточно денег");
 						RemovePlayerFromVehicle(playerid);
@@ -14872,8 +14771,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					else
 					{
 						job_car[playerid] = car;
-						pData[playerid][pCash] -= 5000;
-						SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+						GiveMoney(playerid, -5000);
 						TogglePlayerControllable(playerid, 1);
 						return true;
 					}
@@ -14882,7 +14780,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				{
 					if(pData[playerid][pDLevel] > 4)
 					{
-						if(pData[playerid][pCash] < 10000)
+						if(GetMoney(playerid) < 10000)
 						{
 							SCM(playerid, COLOR_WHITE, " Не достаточно денег");
 							RemovePlayerFromVehicle(playerid);
@@ -14892,8 +14790,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						else
 						{
 							job_car[playerid] = car;
-							pData[playerid][pCash] -= 10000;
-							SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+							GiveMoney(playerid, -10000);
 							TogglePlayerControllable(playerid, 1);
 							return true;
 						}
@@ -14909,7 +14806,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				{
 					if(pData[playerid][pDLevel] > 24)
 					{
-						if(pData[playerid][pCash] < 20000)
+						if(GetMoney(playerid) < 20000)
 						{
 							SCM(playerid, COLOR_WHITE, " Не достаточно денег");
 							RemovePlayerFromVehicle(playerid);
@@ -14919,8 +14816,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						else
 						{
 							job_car[playerid] = car;
-							pData[playerid][pCash] -= 20000;
-							SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+							GiveMoney(playerid, -20000);
 							TogglePlayerControllable(playerid, 1);
 							return true;
 						}
@@ -15013,12 +14909,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				case 6: SetPVarInt(playerid,"Bankmoney",100000);
 				case 7: SetPVarInt(playerid,"Bankmoney",500000);
 			}
-			if(pData[playerid][pCash] < GetPVarInt(playerid,"Bankmoney")) return SCM(playerid,COLOR_GREY," У вас  Недостаточно средств"), ShowPlayerDialog(playerid, 8900, DIALOG_STYLE_LIST, "ATM",ATMBank, "Далее", "Выход");
-			pData[playerid][pCash]-=GetPVarInt(playerid,"Bankmoney");
+			if(GetMoney(playerid) < GetPVarInt(playerid,"Bankmoney")) return SCM(playerid,COLOR_GREY," У вас  Недостаточно средств"), ShowPlayerDialog(playerid, 8900, DIALOG_STYLE_LIST, "ATM",ATMBank, "Далее", "Выход");
+
+			GiveMoney(playerid, -GetPVarInt(playerid,"Bankmoney"));
 			pData[playerid][pBank]+=GetPVarInt(playerid,"Bankmoney");
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
 			SetAccountInfo(playerid, pData[playerid][pBank], "pBank");
-			MoneyLog(pData[playerid][pName],"None", GetPVarInt(playerid,"Bankmoney"), "(+)PutMoneyOnBank");
+			
 			format(string,15,"~r~-$%i",GetPVarInt(playerid,"Bankmoney")), GameTextForPlayer(playerid,string,1000,1);
 			SendMes(playerid,0x6495EDFF," Вы пополнили счет на %i вирт. Баланс: %i вирт",GetPVarInt(playerid,"Bankmoney"),pData[playerid][pBank]);
 			PlayerPlaySound(playerid, 1052, 0.0, 0.0, 0.0);
@@ -15040,8 +14936,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			if(pData[playerid][pBank] < GetPVarInt(playerid,"Bankmoney")) return SCM(playerid,COLOR_GREY," У вас  Недостаточно средств"), ShowPlayerDialog(playerid, 8900, DIALOG_STYLE_LIST, "ATM",ATMBank, "Далее", "Выход");
 			pData[playerid][pBank]-=GetPVarInt(playerid,"Bankmoney");
-			pData[playerid][pCash]+=GetPVarInt(playerid,"Bankmoney");
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			GiveMoney(playerid, GetPVarInt(playerid,"Bankmoney"));
+			
 			SetAccountInfo(playerid, pData[playerid][pBank], "pBank");
 			MoneyLog(pData[playerid][pName],"None", GetPVarInt(playerid,"Bankmoney"), "(+)GetMoneyOfBank");
 			format(string,15,"~b~+$%i",GetPVarInt(playerid,"Bankmoney")), GameTextForPlayer(playerid,string,1000,1);
@@ -15127,7 +15023,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			
 			MoneyLog(pData[playerid][pName],"None", HouseInfo[house][hValue], "(+)SellGosHouse");
 			BuyHouse(house);
-			SaveMySQL(5,house);
+			new str_buy_house[213];
+			mysql_format(DATABASE, str_buy_house, sizeof str_buy_house, "UPDATE `"TABLE_HOUSE"` SET `hOwner`='None' WHERE hID = %d", house);
+			mysql_query(DATABASE, str_buy_house, false);
 			
 			return true;
 		}
@@ -15161,8 +15059,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 				loader_actor_text[0] = CreateDynamic3DTextLabel("Спасибо за работу, приходите еще!", 0x6495EDFF, 2121.6665,-2274.1511,21.0061+0.8, 30.0);
 				loader_actor_time[0] = 5;
-				pData[playerid][pCash] +=GetPVarInt(playerid, "zp_loader");
-				SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+
+				GiveMoney(playerid, GetPVarInt(playerid, "zp_loader"));
 				PlayerPlaySound(playerid, 18015, 0.0, 0.0, 0);
 				DeletePVar(playerid, "meshkov");
 				DeletePVar(playerid, "zp_loader");
@@ -15310,14 +15208,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				if (PlayerToPoint(3, playerid,BizzInfo[i][bEntranceX], BizzInfo[i][bEntranceY], BizzInfo[i][bEntranceZ]) && BizzInfo[i][bType] != 4)
 				{
-					if(pData[playerid][pCash] < BizzInfo[i][bEntranceCost])
+					if(GetMoney(playerid) < BizzInfo[i][bEntranceCost])
 					{
 						SCM(playerid, COLOR_GRAD1, "  У вас нет столько денег");
 						return true;
 					}
+					GiveMoney(playerid, -BizzInfo[i][bEntranceCost]);
 					
-					pData[playerid][pCash] -=BizzInfo[i][bEntranceCost];
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
 					BizzInfo[i][bTill] += BizzInfo[i][bEntranceCost];
 					BizzPay[i] += BizzInfo[i][bEntranceCost];
 					SaveMySQL(4,i);
@@ -16079,9 +15976,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			new moneys;
 			moneys = strval(inputtext);
 			if(strval(inputtext) < 1) return SCM(playerid, COLOR_RED, " Неверная сумма");
-			if(pData[playerid][pCash] < strval(inputtext)) return SCM(playerid,COLOR_GREY, "  У вас нет столько денег!"),ShowPlayerDialog(playerid,8842,DIALOG_STYLE_INPUT,"Слив ворованных денег","Если к вам попали ворованные/сбагозенные деньги,\nих следует передать администрации.\nИначе вы можете быть забаненым как вор/соучастник!","Готово","Отмена");
-			pData[playerid][pCash] -= strval(inputtext);
-			SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+			if(GetMoney(playerid) < strval(inputtext)) return SCM(playerid,COLOR_GREY, "  У вас нет столько денег!"),ShowPlayerDialog(playerid,8842,DIALOG_STYLE_INPUT,"Слив ворованных денег","Если к вам попали ворованные/сбагозенные деньги,\nих следует передать администрации.\nИначе вы можете быть забаненым как вор/соучастник!","Готово","Отмена");
+
+			GiveMoney(playerid, -strval(inputtext));
 			format(string, 90, " Вы пожертвовали $ %i", moneys);
 			SCM(playerid, COLOR_WHITE, string);
 			SCM(playerid, COLOR_LIGHTRED, " Большое спасибо за сотрудничество");
@@ -17133,7 +17030,7 @@ public OnPlayerDeath(playerid, killerid, reason)
 	}
 	if(RouletStol[playerid] > 0)
 	{
-		if(RouletPlay[RouletStol[playerid]] == false) pData[playerid][pCash]+=RouletBet[playerid];
+		if(RouletPlay[RouletStol[playerid]] == false)GiveMoney(playerid, RouletBet[playerid]);
 		DestroyObject(RouletObject[playerid]);
 		RouletBet[playerid] = 0;
 		RouletStol[playerid] = 0;
@@ -17321,8 +17218,8 @@ public OnPlayerDisconnect(playerid, reason)
 	else if(pData[playerid][pDuelIDP] != -1)
 	{
 		ResetPlayerWeaponEx(playerid);
+		GiveMoney(playerid, pData[playerid][pDuelID]*2);
 		
-		pData[pData[playerid][pDuelIDP]][pCash] += pData[playerid][pDuelID]*2;
 		SendClientMessage(pData[playerid][pDuelIDP], COLOR_GREEN, " Состязание окончено! Вы победили.");
 		
 		SetPlayerInterior(pData[playerid][pDuelIDP], 0);
@@ -17423,8 +17320,8 @@ public OnPlayerDisconnect(playerid, reason)
 	}
 	if(RouletStol[playerid] > 0)
 	{
-		if(RouletPlay[RouletStol[playerid]] == false) pData[playerid][pCash]+=RouletBet[playerid];
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		if(RouletPlay[RouletStol[playerid]] == false) GiveMoney(playerid, RouletBet[playerid]);
+	
 		DestroyObject(RouletObject[playerid]);
 		RouletBet[playerid] = 0;
 		RouletStol[playerid] = 0;
@@ -17753,7 +17650,8 @@ stock SetPlayerSpawn(playerid)
 		}
 		else if(pData[playerid][pDuelIDP] != -1)
 		{
-			pData[pData[playerid][pDuelIDP]][pCash] += pData[playerid][pDuelID]*2;
+			GiveMoney(pData[playerid][pDuelIDP], pData[playerid][pDuelID]*2);
+
 			SendClientMessage(playerid, COLOR_RED, " Состязание окончено! Вы проиграли.");
 			SendClientMessage(pData[playerid][pDuelIDP], COLOR_GREEN, " Состязание окончено! Вы победили.");
 			
@@ -18350,9 +18248,8 @@ public OnPlayerEnterCheckpoint(playerid)
 		for(new i = 57; i <= 71; i++) if(GetVehicleModel(tmpcar) == ShopCar[i][0]) cash = 1100+(job_lvl(pData[playerid][job_skill][job_ugon])*7), give_job_exp(playerid, job_ugon, 2);
 		for(new i = 72; i <= 85; i++) if(GetVehicleModel(tmpcar) == ShopCar[i][0]) cash = 1300+(job_lvl(pData[playerid][job_skill][job_ugon])*7), give_job_exp(playerid, job_ugon, 2);
 		SCM(playerid,COLOR_BLUE," [SMS]: Отличная работа. Приходи ещё.");
-		pData[playerid][pCash] += cash;
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
-
+		
+		GiveMoney(playerid, cash);
 		format(string,10,"~b~+$%i",cash);
 		GameTextForPlayer(playerid,string, 3000, 1);
 
@@ -18429,8 +18326,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	if(CP[playerid] == 500)
 	{
 		SCM(playerid, COLOR_GREEN, " Вы получили премию, в размере: 600 вирт");
-		pData[playerid][pCash] += 600;
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		GiveMoney(playerid, 600);
 		DisablePlayerCheckpoint(playerid);
 		CP[playerid] = 0;
 	}
@@ -18515,8 +18411,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	
 	else if(CP[playerid] == 500)
 	{
-		pData[playerid][pCash] += 600;
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		GiveMoney(playerid, 600);
 		CP[playerid] = 0;
 		format(string, 32, "~g~+600");
 		GameTextForPlayer(playerid, string, 5000, 1);
@@ -18601,16 +18496,17 @@ public OnPlayerEnterRaceCheckpoint(playerid)
 						{
 							format(string,32,"~g~+$%i",15000-(RaceList*5000));
 							GameTextForPlayer(playerid,string, 5000, 1);
-							pData[playerid][pCash] += 15000-(RaceList*5000);
+							GiveMoney(playerid, 15000-(RaceList*5000));
+							
 						}
 					default:
 						{
 							format(string,32,"~g~+$%i",45000-(RaceList*15000));
 							GameTextForPlayer(playerid,string, 5000, 1);
-							pData[playerid][pCash] += 45000-(RaceList*15000);
+							GiveMoney(playerid, 45000-(RaceList*15000));
+							
 						}
 					}
-					SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
 				}
 				SetPlayerInterior(playerid,3);
 				SetPlayerPos(playerid,831.7769,6.8750,1004.1797);
@@ -19374,7 +19270,7 @@ publics: WheelTooo(idx)
 					    if(WheelBet[i] == 1)//x2
 						{
 							SendMes(i, 0xE09B11FF, " Вы выиграли $%d",WheelBetMoney[i]*2);
-							pData[i][pCash] += WheelBetMoney[i]*2;
+							GiveMoney(i, WheelBetMoney[i]*2);
 							PlayerPlaySound(i, 31205, 0.0, 0.0, 0.0);
 						}
 					}
@@ -19383,7 +19279,7 @@ publics: WheelTooo(idx)
 					    if(WheelBet[i] == 2)//x4
 						{
 							SendMes(i, COLOR_BLUEGREEN, " Вы выиграли $%d",WheelBetMoney[i]*4);
-							pData[i][pCash] += WheelBetMoney[i]*4;
+							GiveMoney(i, WheelBetMoney[i]*4);
 							PlayerPlaySound(i, 31205, 0.0, 0.0, 0.0);
 						}
 					}
@@ -19392,7 +19288,7 @@ publics: WheelTooo(idx)
 					    if(WheelBet[i] == 3)//x8
 						{
 							SendMes(i, COLOR_BLUEGREEN, " Вы выиграли $%d",WheelBetMoney[i]*8);
-							pData[i][pCash] += WheelBetMoney[i]*8;
+							GiveMoney(i, WheelBetMoney[i]*8);
 							PlayerPlaySound(i, 31205, 0.0, 0.0, 0.0);
 						}
 					}
@@ -19401,7 +19297,7 @@ publics: WheelTooo(idx)
 					    if(WheelBet[i] == 4)//x16
 						{
 							SendMes(i, COLOR_BLUEGREEN, " Вы выиграли $%d",WheelBetMoney[i]*16);
-							pData[i][pCash] += WheelBetMoney[i]*16;
+							GiveMoney(i, WheelBetMoney[i]*16);
 							PlayerPlaySound(i, 31205, 0.0, 0.0, 0.0);
 						}
 					}
@@ -19410,7 +19306,7 @@ publics: WheelTooo(idx)
 					    if(WheelBet[i] == 5)
 						{
 							SendMes(i, COLOR_BLUEGREEN, " Вы выиграли $%d",WheelBetMoney[i]*32);
-							pData[i][pCash] += WheelBetMoney[i]*32;
+							GiveMoney(i, WheelBetMoney[i]*32);
 							PlayerPlaySound(i, 31205, 0.0, 0.0, 0.0);
 						}
 					}
@@ -19665,9 +19561,9 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 	{
 		if(robh[playerid] != true)return SCM(playerid,COLOR_GREY," У тебя нет материалов для сдачи");
 		robh[playerid] = false;
-		pData[playerid][pCash] += 500;
+		GiveMoney(playerid, 500);
+	
 		pData[playerid][pRobHouse] = 1;
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
 		SetAccountInfo(playerid, pData[playerid][pRobHouse], "pRobHouse");
 		SCM(playerid,COLOR_GREY," Вы сдали ограбленное на 500 вирт");
 		return true;
@@ -21281,7 +21177,7 @@ public OnPlayerEnterDynamicArea(playerid, areaid)
 	}
 	else if(areaid == dresspick)
 	{
-		if(pData[playerid][pCash] < 10000) return SCM(playerid, COLOR_DRED, " [!]{FFFFFF}  Недостаточно средств");
+		if(GetMoney(playerid) < 10000) return SCM(playerid, COLOR_DRED, " [!]{FFFFFF}  Недостаточно средств");
 		enter_acs[playerid] = 0;
 		if(!IsValidMenu(headmenu[0]))
 		{
@@ -23434,7 +23330,7 @@ public OnPlayerSelectedMenuRow(playerid, row)
 			}
 		default:
 			{
-				if(pData[playerid][pCash] < Acs_Info[ChangeSkin[playerid]][aPrice]) SCM(playerid, COLOR_DRED, " [!]{FFFFFF}  Недостаточно средств");
+				if(GetMoney(playerid) < Acs_Info[ChangeSkin[playerid]][aPrice]) SCM(playerid, COLOR_DRED, " [!]{FFFFFF}  Недостаточно средств");
 				else
 				{
 					format(format_string, sizeof format_string, "SELECT `ObjectID` FROM `"TABLE_ACS"` WHERE `Owned` = '%s' AND `ObjectID` = '%i'",pData[playerid][pName],Acs_Info[ChangeSkin[playerid]][aID]);
@@ -23463,7 +23359,7 @@ public BuyObject(playerid)
 		format(format_string, sizeof format_string, "INSERT INTO `"TABLE_ACS"` (`Owned`, `ObjectID`, `Price`) VALUES ('%s', '%i', '%i')",pData[playerid][pName], Acs_Info[ChangeSkin[playerid]][aID], Acs_Info[ChangeSkin[playerid]][aPrice]);
 		mysql_query(DATABASE,format_string);
 
-		pData[playerid][pCash] -= Acs_Info[ChangeSkin[playerid]][aPrice];
+		GiveMoney(playerid, -Acs_Info[ChangeSkin[playerid]][aPrice]);
 	}
 	return true;
 }
@@ -24071,45 +23967,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
 				RemovePlayerFromVehicle(playerid);
 			}
 		}
-		if(newcar >= hamccar[0] && newcar <= hamccar[9])
-		{
-			if(pData[playerid][pMember] != 24) return SCM(playerid, COLOR_GREY, " Вы не состоите в Mongols MC!"),RemovePlayerFromVehicle(playerid);
-		}
-		if(newcar == hamccar[10])
-		{
-			if(pData[playerid][pMember] != 24) return SCM(playerid, COLOR_GREY, " Вы не состоите в Mongols MC!"),RemovePlayerFromVehicle(playerid);
-			format(string, 128, " Материалов в фургоне: %i / 5000", bFuri[newcar-hamccar[10]][bHells][0]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-			format(string, 128, " Бензина в фургоне: %i / 2000", bFuri[newcar-hamccar[10]][bHells][2]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-			format(string, 128, " Товаров в фургоне: %i / 200", bFuri[newcar-hamccar[10]][bHells][1]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-		}
-		if(newcar >= wmccar[0] && newcar <= wmccar[9])
-		{
-			if(pData[playerid][pMember] != 26) return SCM(playerid, COLOR_GREY, " Вы не состоите в Warlocks MC!"),RemovePlayerFromVehicle(playerid);
-		}
-		if(newcar == wmccar[10])
-		{
-			if(pData[playerid][pMember] != 26) return SCM(playerid, COLOR_GREY, " Вы не состоите в Warlocks MC!"),RemovePlayerFromVehicle(playerid);
-			format(string, 128, " Материалов в фургоне: %i / 5000", bFuri[newcar-wmccar[10]][bWarlocks][0]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-			format(string, 128, " Бензина в фургоне: %i литров / 2000", bFuri[newcar-wmccar[10]][bWarlocks][2]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-			format(string, 128, " Товаров в фургоне: %i / 200", bFuri[newcar-wmccar[10]][bWarlocks][1]);
-			SCM(playerid, TEAM_GROVE_COLOR, string);
-		}
-		if(newcar >= pmccar[0] && newcar <= pmccar[9])
-		{
-			if(pData[playerid][pMember] != 29) return SCM(playerid, COLOR_GREY, " Вы не состоите в Pagans MC!"),RemovePlayerFromVehicle(playerid);
-		}
-		if(newcar == pmccar[10])
-		{
-			if(pData[playerid][pMember] != 29) return SCM(playerid, COLOR_GREY, " Вы не состоите в Pagans MC!"),RemovePlayerFromVehicle(playerid);
-			SendMes(playerid, TEAM_GROVE_COLOR, " Материалов в фургоне: %i / 5000",bFuri[newcar-pmccar[10]][bPagans][0]);
-			SendMes(playerid, TEAM_GROVE_COLOR, " Бензина в фургоне: %i / 2000",bFuri[newcar-pmccar[10]][bPagans][2]);
-			SendMes(playerid, TEAM_GROVE_COLOR, " Товаров в фургоне: %i / 200",bFuri[newcar-pmccar[10]][bPagans][1]);
-		}
+		
 		if(newcar >= ruscar[0] && newcar <= ruscar[14])
 		{
 			if(pData[playerid][pLeader] == 14 || pData[playerid][pMember] == 14) { }
@@ -25328,7 +25186,6 @@ publics: Fresh()
 		}
 	}
 
-	GetMoney();
 	if(paint_info[0] > 0) GetPaintball();
 	if(race_info[0] > 0) GetRace();
 	if(WarStart > 0) WarStart--;
@@ -25410,7 +25267,7 @@ stock kShowStats(playerid,targetid)
 	format(teampstringds,sizeof(teampstringds),"Exp:\t\t\t\t%.0f/%d\n",pData[targetid][pExp],expert);
 	strcat(httpquery,teampstringds);
 
-	format(teampstringd,sizeof(teampstringd),"Деньги:\t\t\t%d",pData[targetid][pCash]);
+	format(teampstringd,sizeof(teampstringd),"Деньги:\t\t\t%d",GetMoney(targetid));
 	strcat(httpquery,teampstringd);
 
 	format(teampstring,sizeof(teampstring),"\nВарнов:\t\t\t%d",pData[targetid][pWarns]);
@@ -25800,7 +25657,7 @@ stock ShowStats(playerid,targetid)
 	format(str,128,"Имя:\t\t\t\t%s",pData[targetid][pName]), strcat(string,str);
 	format(str,128,"\n\nУровень:\t\t\t%i",pData[targetid][pLevel]), strcat(string,str);
 	format(str,128,"\nExp:\t\t\t\t%.0f/%i",pData[targetid][pExp], (pData[targetid][pLevel]+1)*4), strcat(string,str);
-	format(str,128,"\nДеньги:\t\t\t%i",pData[targetid][pCash]), strcat(string,str);
+	format(str,128,"\nДеньги:\t\t\t%i",GetMoney(targetid) ), strcat(string,str);
 	format(str,128,"\nТелефон:\t\t\t%i",pData[targetid][pPnumber]), strcat(string,str);
 	if(pData[targetid][punWarns] > Now())
 	{
@@ -25839,7 +25696,8 @@ stock CheckQuest(playerid)
 				ShowPlayerDialog(playerid,11230,DIALOG_STYLE_MSGBOX,"Задание","Это снова Джанк,вижу тебе нужны права.\nУ меня есть знакомые в Автошколе,они помогут тебе сдать совершенно бесплатно.\nЧтобы добраться до Автошколы,воспользуйся Автобусом или Такси.\n{DDCD70}Задача: Пройдите автосдачу на права(Не покупая права у инструктора!)\n{17B757}Награда: Бесплатная сдача на права"
 				,"Готово","");
 				GameTextForPlayer(playerid, "~g~+1000$", 2000, 1);
-				pData[playerid][pCash] += 1000;
+
+			
 				pData[playerid][pQuest] = 2;
 				pData[playerid][pQuestP] = 0;
 				pData[playerid][pQuestPF] = 0;
@@ -25860,7 +25718,6 @@ stock CheckQuest(playerid)
 				ShowPlayerDialog(playerid,13374,DIALOG_STYLE_MSGBOX,"Задание","Теперь у тебя есть права и деньги. Пора бы приодеться\nВ каждом городе есть магазин одежды. Доедь до него и купи что-нибудь приличное.\nИ не забывай использовать gps\n{DDCD70}Задача: Купить любой скин\n{17B757}Награда: 1000 вирт"
 				,"Готово","");
 				GameTextForPlayer(playerid, "~g~+2000$", 2000, 1);
-				pData[playerid][pCash] += 2000;
 				pData[playerid][pQuest] = 4;
 				pData[playerid][pQuestP] = 0;
 				pData[playerid][pQuestPF] = 0;
@@ -25872,7 +25729,6 @@ stock CheckQuest(playerid)
 				ShowPlayerDialog(playerid,13375,DIALOG_STYLE_MSGBOX,"Задание","Теперь ты можешь поехать в Мэрию и получить там паспорт\n{DDCD70}Задача: Войти в мэрию\n{17B757}Награда: 2 уровень,4000 вирт"
 				,"Готово","");
 				GameTextForPlayer(playerid, "~g~+1000$", 2000, 1);
-				pData[playerid][pCash] += 1000;
 				pData[playerid][pQuest] = 5;
 				pData[playerid][pQuestP] = 0;
 				pData[playerid][pQuestPF] = 0;
@@ -25884,7 +25740,7 @@ stock CheckQuest(playerid)
 				ShowPlayerDialog(playerid,13376,DIALOG_STYLE_MSGBOX,"Задание","Поздравляем\nСюжетная линия ''Гость'' пройдена!"
 				,"Готово","");
 				GameTextForPlayer(playerid, "~g~+4000$", 2000, 1);
-				pData[playerid][pCash] += 4000;
+
 				if(pData[playerid][pLevel] == 1)
 				{
 					SCM(playerid, COLOR_LIGHTGREEN, " Поздравляем! Ваш лвл повысился");
@@ -27706,43 +27562,7 @@ stock CreateVehicles()
 	CreateVehicle_R(588,-2455.7896,740.9033,34.9215,179.2092,1,1,600); // Hot Dog 6
 	CreateVehicle_R(588,-2460.1279,740.7226,34.9204,180.5361,1,1,600); // Hot Dog 7
 	hotdogcar[1] = CreateVehicle_R(588,-2464.4287,740.7175,34.9191,180.0000,1,1,600); // Hot Dog 8
-	//================================== Mongols MC ======================
-	hamccar[0] = CreateVehicle_R(463,694.79998779,-473.20001221,16.00000000,270.00000000,0,0,300); //Freeway
-	hamccar[1] = CreateVehicle_R(463,694.90002441,-470.10000610,16.00000000,270.00000000,0,0,300); //Freeway
-	hamccar[2] = CreateVehicle_R(463,695.09997559,-466.89999390,16.00000000,270.00000000,0,0,300); //Freeway
-	hamccar[3] = CreateVehicle_R(463,695.09997559,-464.00000000,16.00000000,270.00000000,0,0,300); //Freeway
-	hamccar[4] = CreateVehicle_R(463,695.00000000,-461.00000000,16.00000000,270.00000000,0,0,300); //Freeway
-	hamccar[5] = CreateVehicle_R(463,708.79998779,-473.60000610,16.00000000,90.00000000,0,0,300); //Freeway
-	hamccar[6] = CreateVehicle_R(463,708.79998779,-461.29998779,16.00000000,90.00000000,0,0,300); //Freeway
-	hamccar[7] = CreateVehicle_R(463,708.70001221,-464.39999390,16.00000000,90.00000000,0,0,300); //Freeway
-	hamccar[8] = CreateVehicle_R(463,708.20001221,-467.70001221,16.00000000,90.00000000,0,0,300); //Freeway
-	hamccar[9] = CreateVehicle_R(463,708.20001221,-470.70001221,16.00000000,90.00000000,0,0,300); //Freeway
-	hamccar[10] = CreateVehicle_R(459,696.09997559,-451.00000000,16.50000000,180.00000000,0,0,300); //Pony
-	//=============================== Warlocks MC ==============================
-	wmccar[0] = CreateVehicle_R(463,669.59997559,1729.69995117,6.59999990,38.00000000,0,0,300); //Freeway
-	wmccar[1] = CreateVehicle_R(463,667.29998779,1728.00000000,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[2] = CreateVehicle_R(463,665.20001221,1726.09997559,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[3] = CreateVehicle_R(463,663.29998779,1724.40002441,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[4] = CreateVehicle_R(463,661.09997559,1722.50000000,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[5] = CreateVehicle_R(463,659.09997559,1720.80004883,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[6] = CreateVehicle_R(463,656.90002441,1718.80004883,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[7] = CreateVehicle_R(463,654.90002441,1717.09997559,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[8] = CreateVehicle_R(463,652.79998779,1715.50000000,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[9] = CreateVehicle_R(463,650.50000000,1713.30004883,6.59999990,37.99621582,0,0,300); //Freeway
-	wmccar[10] = CreateVehicle_R(459,672.7252,1698.7985,7.0829,130.1172,0,0,300); //Pony
-	//================================== Pagans MC =============================
-	pmccar[0] = CreateVehicle_R(463,-243.3742,2609.1772,62.2617,182.5239,0,0,300); //Freeway
-	pmccar[1] = CreateVehicle_R(463,-240.5210,2609.1772,62.2617,182.5239,0,0,300); //Freeway
-	pmccar[2] = CreateVehicle_R(463,-237.4994,2609.1772,62.2617,182.5239,0,0,300); //Freeway
-	pmccar[3] = CreateVehicle_R(463,-234.4931,2609.1772,62.2617,182.5239,0,0,300); //Freeway
-	pmccar[4] = CreateVehicle_R(463,-231.4994,2609.1772,62.2617,182.5239,0,0,300); //Freeway
 	
-	pmccar[5] = CreateVehicle_R(463,-231.7858,2594.1550,62.2617,359.6360,0,0,300); //Freeway
-	pmccar[6] = CreateVehicle_R(463,-234.8786,2594.1550,62.2617,359.6360,0,0,300); //Freeway
-	pmccar[7] = CreateVehicle_R(463,-237.9021,2594.1550,62.2617,359.6360,0,0,300); //Freeway
-	pmccar[8] = CreateVehicle_R(463,-240.9503,2594.1550,62.2617,359.6360,0,0,300); //Freeway
-	pmccar[9] = CreateVehicle_R(463,-243.6877,2594.1550,62.2617,359.6360,0,0,300); //Freeway
-	pmccar[10] = CreateVehicle_R(459,-228.7738,2594.1550,62.2617,359.6360,0,0,600); //Pony
 	//================================== LVPD ==================================
 	lvpdcar[0] = CreateVehicle_R(598,2269.2258,2477.0840,10.6042,179.1057,0,1,600); // LVPD
 	lvpdcar[1] = CreateVehicle_R(598,2273.4949,2477.0679,10.5961,179.0085,0,1,600); // LVPD
@@ -28268,8 +28088,8 @@ stock GiveExp(playerid)
 					SendClientMessage(playerid, COLOR_BLUE,"Спасибо за то, что принимаете участие в развитии проекта");
 					switch(booston)
 					{
-						case 0:SendMes(playerid, COLOR_BLUE, "Вам зачисленно %d вирт", money),pData[playerid][pCash] += money;
-						default: SendMes(playerid, COLOR_BLUE, "Вам зачисленно %d вирт", boostmoney),pData[playerid][pCash] += boostmoney;
+						case 0:SendMes(playerid, COLOR_BLUE, "Вам зачисленно %d вирт", money),GiveMoney(playerid, money);
+						default: SendMes(playerid, COLOR_BLUE, "Вам зачисленно %d вирт", boostmoney),GiveMoney(playerid, boostmoney);
 					}
 					SendClientMessage(playerid,COLOR_GREEN,"Рекомендуется: Сменить пароль на более сложный ( /mm >>> [6] Смена пароля )");
 					SendClientMessage(playerid,COLOR_GREEN,"Рекомендуется: Поставить проверку по IP и SuperKey ( /mm >>> [10] Безопасность )");
@@ -28363,7 +28183,7 @@ stock PayDay()
 			SendClientMessage(i, 0xFF8C37AA, string);
 		}
 		if(pData[i][pBank] > 50 && pData[i][pKrisha] != 0) pData[i][pBank] -= 50, pData[i][pDolg] += 50;
-		if(pData[i][pCash] > 50 && pData[i][pKrisha] != 0) pData[i][pCash] -= 50, pData[i][pDolg] += 50;
+		if(GetMoney(i) > 50 && pData[i][pKrisha] != 0) GiveMoney(i, -50), pData[i][pDolg] += 50;
 		format(string, 128, " Счёт за телефон: -%i вирт", pData[i][pMobile]);
 		SendClientMessage(i, 0xFF8C37AA, string);
 		pData[i][pBank]-=pData[i][pMobile];
@@ -28695,7 +28515,7 @@ stock get_prod_name(type)
 CMD:plist(playerid)
 {
 	new str_delivery[100], str_list[512];
-	format(str_list, sizeof str_list,"{ffffff}Номер\t{ffffff}Тип товара\t{ffffff}Заказчик\t{ffffff}Кол-о");
+	format(str_list, sizeof str_list,"{ffffff}Номер\t{ffffff}Тип товара\t{ffffff}Заказчик\t{ffffff}Кол-о\n");
 
 	for(new ff = 0; ff < sizeof prod_info-1; ff++)
 	{
@@ -30076,8 +29896,9 @@ CMD:tload(playerid, params[])
 	}
 	if(IsPlayerInRangeOfPoint(playerid, 10.0, 256.4736,1414.5182,10.7075))
 	{
-		if(pData[playerid][pCash] < params[0]*Benzbuy[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*Benzbuy[0];
+		if(GetMoney(playerid) < params[0]*Benzbuy[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+		GiveMoney(playerid, -params[0]*Benzbuy[0]);
+
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],Benzbuy[0]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(584, 249.1628,1420.7445,11.1698,269.4982,1,1, -1);
 		loaded_type[playerid] = 1;
@@ -30093,8 +29914,9 @@ CMD:tload(playerid, params[])
 	}
 	else if(IsPlayerInRangeOfPoint(playerid, 10.0,-1046.7723,-670.7208,32.3516))
 	{
-		if(pData[playerid][pCash] < params[0]*Benzbuy[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*Benzbuy[1];
+		if(GetMoney(playerid) < params[0]*Benzbuy[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+
+		GiveMoney(playerid, -params[0]*Benzbuy[1]);
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],Benzbuy[1]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(584,-1053.0789,-662.7253,32.5968,266.1711,1,1, -1);
 		SetVehicleParamsEx(trailer_id[playerid],false,false,false,true,false,false,false);
@@ -30110,8 +29932,9 @@ CMD:tload(playerid, params[])
 	}
 	else if(IsPlayerInRangeOfPoint(playerid, 10.0,608.7718,847.8765,-43.1532))
 	{
-		if(pData[playerid][pCash] < params[0]*ugolbuy[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*ugolbuy[0];
+		if(GetMoney(playerid) < params[0]*ugolbuy[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+
+		GiveMoney(playerid, -params[0]*ugolbuy[0]);
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],ugolbuy[0]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(450,588.2112,844.9619,-42.8014,272.4998,1,1, -1);
 		SetVehicleParamsEx(trailer_id[playerid],false,false,false,true,false,false,false);
@@ -30127,8 +29950,9 @@ CMD:tload(playerid, params[])
 	}
 	else if(IsPlayerInRangeOfPoint(playerid, 10.0,-1873.0896,-1720.2430,21.7500))
 	{
-		if(pData[playerid][pCash] < params[0]*ugolbuy[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*ugolbuy[1];
+		if(GetMoney(playerid) < params[0]*ugolbuy[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+
+		GiveMoney(playerid, -params[0]*ugolbuy[1]);
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],ugolbuy[1]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(450,-1863.5292,-1725.8236,21.7500,120.3313,1,1, -1);
 		SetVehicleParamsEx(trailer_id[playerid],false,false,false,true,false,false,false);
@@ -30144,8 +29968,9 @@ CMD:tload(playerid, params[])
 	}
 	else if(IsPlayerInRangeOfPoint(playerid, 10.0,-449.3336,-65.9115,59.4158))
 	{
-		if(pData[playerid][pCash] < params[0]*Buyderevo[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*Buyderevo[0];
+		if(GetMoney(playerid) < params[0]*Buyderevo[0]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+
+		GiveMoney(playerid, -params[0]*Buyderevo[0]);
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],Buyderevo[0]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(450,-455.8806,-47.2069,60.4907,182.1683,1,1, -1);
 		SetVehicleParamsEx(trailer_id[playerid],false,false,false,true,false,false,false);
@@ -30161,8 +29986,9 @@ CMD:tload(playerid, params[])
 	}
 	else if(IsPlayerInRangeOfPoint(playerid, 10.0,-1978.6846,-2434.8274,30.6250))
 	{
-		if(pData[playerid][pCash] < params[0]*Buyderevo[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
-		pData[playerid][pCash] -= params[0]*Buyderevo[1];
+		if(GetMoney(playerid) < params[0]*Buyderevo[1]) return SCM(playerid, 0x6495EDFF, "  У вас нет столько денег!");
+
+		GiveMoney(playerid, -params[0]*Buyderevo[1]);
 		format(cString, 64, "{00D26D}Загружено %i т.груза на сумму %i вирт", params[0],Buyderevo[0]*params[0]);
 		trailer_id[playerid] = CreateVehicle_R(450,-1966.3121,-2436.0132,31.2080,226.3676,1,1, -1);
 		SetVehicleParamsEx(trailer_id[playerid],false,false,false,true,false,false,false);
@@ -30199,7 +30025,8 @@ CMD:tunload(playerid, params[])
 			if(IsPlayerInRangeOfPoint(playerid, 10.0, 2601.7222,-2226.5867,13.3732))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellbenz[0];
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellbenz[0]);
+
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else  pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, 64, "{00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellbenz[0]*pData[playerid][pDgruz]);
@@ -30210,7 +30037,7 @@ CMD:tunload(playerid, params[])
 			else if(IsPlayerInRangeOfPoint(playerid, 10.0, -1731.4509,118.9413,3.5547))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellbenz[1];
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellbenz[1]);
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, 64, "{00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellbenz[1]*pData[playerid][pDgruz]);
@@ -30224,7 +30051,8 @@ CMD:tunload(playerid, params[])
 			if(IsPlayerInRangeOfPoint(playerid, 7.0, 2601.7222,-2226.5867,13.3732))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellugol[0];
+
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellugol[0]);
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, 64, "{00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellugol[0]*pData[playerid][pDgruz]);
@@ -30235,7 +30063,7 @@ CMD:tunload(playerid, params[])
 			else if(IsPlayerInRangeOfPoint(playerid, 7.0, -1731.4509,118.9413,3.5547))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellugol[1];
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellugol[1]);
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, sizeof(cString), " {00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellugol[1]*pData[playerid][pDgruz]);
@@ -30249,7 +30077,8 @@ CMD:tunload(playerid, params[])
 			if(IsPlayerInRangeOfPoint(playerid, 7.0, 2601.7222,-2226.5867,13.3732))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellderevo[0];
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellderevo[0]);
+
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, 64, "{00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellderevo[0]*pData[playerid][pDgruz]);
@@ -30260,7 +30089,7 @@ CMD:tunload(playerid, params[])
 			else if(IsPlayerInRangeOfPoint(playerid, 7.0, -1731.4509,118.9413,3.5547))
 			{
 				unloadtimer[playerid] = gettime()+300;
-				pData[playerid][pCash] += pData[playerid][pDgruz]*Sellderevo[1];
+				GiveMoney(playerid, pData[playerid][pDgruz]*Sellderevo[1]);
 				if(booston || (booston2 && pData[playerid][pLevel] < 7)) pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*200;
 				else pData[playerid][pDExp] += 400+pData[playerid][pDgruz]*600;
 				format(cString, 64, "{00D26D}Вы доставили %d т.груза на сумму %i вирт",pData[playerid][pDgruz],Sellderevo[1]*pData[playerid][pDgruz]);
@@ -30528,7 +30357,7 @@ CMD:capture(playerid, params[])
 				SendFamilyMessage(pData[playerid][pMember],0x00B953AA,cString);
 				format(cString,sizeof(cString), "[Внимание]: На вашу территорию напала банда %s",GetGangName(pData[playerid][pMember]));
 				SendFamilyMessage(GZInfo[i][gFrakVlad],COLOR_RED,cString);
-				GangZoneFlashForAll(GZInfo[i][gZone],GetGZColorF(pData[playerid][pMember]));
+				GangZoneFlashForAll(GZInfo[i][gZone],0xFF0000AA);
 				SCM(playerid,COLOR_WHITE," Территория будет мигать 15 минут. Победит банда, которая останется последней");
 				SCM(playerid,COLOR_WHITE," Территория будет мигать до тех пор, пока на ней не останется 1 банда");
 				CountOnZone[GZInfo[i][gFrakVlad]] = 0;
@@ -30693,7 +30522,7 @@ CMD:bizwithdraw(playerid, params[])
 	}
 	else
 	{
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		BizzInfo[bouse][bTill] -= params[0];
 		format(cString, 64, "Вы сняли %i вирт со счёта вашего бизнеса. Остаток: %i вирт ",params[0],BizzInfo[bouse][bTill]);
 		SCM(playerid, 0x6495EDFF, cString);
@@ -31103,104 +30932,7 @@ CMD:getgun(playerid, params[])
 	}
 	return true;
 }
-CMD:bbank(playerid, params[])
-{
-	if(pData[playerid][pLogin] == false) return true;
-	if(!IsPlayerConnected(playerid)) return true;
-	if(pData[playerid][pMember] == 24 || pData[playerid][pMember] == 26 || pData[playerid][pMember] == 29)
-	if(sscanf(params, "d", params[0])) return SCM(playerid, COLOR_WHITE, " Введите: /bbank [количество]");
-	if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
-	if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
-	switch(pData[playerid][pMember])
-	{
-	case 24:
-		{
-			FracBank[0][fHamc] += params[0];
-			pData[playerid][pCash] -= params[0];
-			format(cString, sizeof(cString), " Вы положили в банк Mongols MC: %i вирт", params[0]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-		}
-	case 26:
-		{
-			FracBank[0][fWmc] += params[0];
-			pData[playerid][pCash] -= params[0];
-			format(cString, sizeof(cString), " Вы положили в банк Warlocks MC: %i вирт",params[0]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-		}
-	case 29:
-		{
-			FracBank[0][fPmc] += params[0];
-			pData[playerid][pCash] -= params[0];
-			format(cString, sizeof(cString), " Вы положили в банк Pagans MC: %i вирт", params[0]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-		}
-	}
-	return true;
-}
-CMD:bwithdraw(playerid, params[])
-{
-	if(pData[playerid][pLogin] == false) return true;
-	if(pData[playerid][pLeader] == 23 || pData[playerid][pLeader] == 24 || pData[playerid][pLeader] == 25 || pData[playerid][pLeader] == 26 || pData[playerid][pLeader] == 27 || pData[playerid][pLeader] == 28 || pData[playerid][pLeader] == 29 || pData[playerid][pLeader] == 30 || pData[playerid][pLeader] == 31 || pData[playerid][pLeader] == 32 )
-	if(sscanf(params, "d", params[0])) return SCM(playerid, COLOR_WHITE, " Введите: /bwithdraw [количество]");
-	if(pData[playerid][pMember] == 24 && pData[playerid][pRank] == 9)
-	{
-		if(FracBank[0][fHamc] == 0) { SCM(playerid, COLOR_GREY, " В банке Mongols MC нет денег"); return true; }
-		if(FracBank[0][fHamc] < params[0]) { SCM(playerid, COLOR_GREY, " В банке Mongols MC нет столько денег"); return true; }
-		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
-		FracBank[0][fHamc] -= params[0];
-		pData[playerid][pCash] +=params[0];
-		format(cString, sizeof(cString), " Вы сняли с банка Mongols MC: %i вирт",params[0]);
-		SCM(playerid, 0x6BB3FFAA, cString);
-	}
-	else if(pData[playerid][pMember] == 26 && pData[playerid][pRank] == 9)
-	{
-		if(FracBank[0][fWmc] == 0) { SCM(playerid, COLOR_GREY, " В банке Highwayman MC нет денег"); return true; }
-		if(FracBank[0][fWmc] < params[0]) { SCM(playerid, COLOR_GREY, " В банке Highwayman MC нет столько денег"); return true; }
-		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
-		FracBank[0][fWmc] -= params[0];
-		pData[playerid][pCash] +=params[0];
-		format(cString, sizeof(cString), " Вы сняли с банка Highwayman MC: %i вирт", params[0]);
-		SCM(playerid, 0x6BB3FFAA, cString);
-	}
-	else if(pData[playerid][pMember] == 29 && pData[playerid][pRank] == 9)
-	{
-		if(FracBank[0][fPmc] == 0) { SCM(playerid, COLOR_GREY, " В банке Pagans MC нет денег"); return true; }
-		if(FracBank[0][fPmc] < params[0]) { SCM(playerid, COLOR_GREY, " В банке Pagans MC нет столько денег"); return true; }
-		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
-		FracBank[0][fPmc] -= params[0];
-		pData[playerid][pCash] +=params[0];
-		format(cString, sizeof(cString), " Вы сняли с банка Pagans MC: %i вирт", params[0]);
-		SCM(playerid, 0x6BB3FFAA, cString);
-	}
-	return true;
-}
-CMD:bbalance(playerid, params[])
-{
-	if(pData[playerid][pLogin] == false) return true;
-	switch(pData[playerid][pMember])
-	{
-	case 24:
-		{
-			format(cString, sizeof(cString), " В банке Mongols MC: %i вирт", FracBank[0][fHamc]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-			return true;
-		}
-	case 26:
-		{
-			format(cString, sizeof(cString), " В банке Warlocks MC: %i вирт", FracBank[0][fWmc]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-			return true;
-		}
-	case 29:
-		{
-			format(cString, sizeof(cString), " В банке Pagans MC: %i вирт", FracBank[0][fPmc]);
-			SCM(playerid, 0x6BB3FFAA, cString);
-			return true;
-		}
-	default: SCM(playerid,COLOR_GREY," Вам недоступна данная команда");
-	}
-	return true;
-}
+
 CMD:warehouse(playerid, params[])
 {
 	if(pData[playerid][pLogin] == false) return true;
@@ -31482,7 +31214,8 @@ CMD:gbankwithdraw(playerid, params[])
 		if(FracBank[0][fBallas] < params[0]) { SCM(playerid, COLOR_GREY, " В банке банды Ballas нет столько денег"); return true; }
 		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
 		FracBank[0][fBallas] -= params[0];
-		pData[playerid][pCash] += params[0];
+
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка банды Ballas: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31492,7 +31225,7 @@ CMD:gbankwithdraw(playerid, params[])
 		if(FracBank[0][fVagos] < params[0]) { SCM(playerid, COLOR_GREY, " В банке банды Vagos нет столько денег"); return true; }
 		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
 		FracBank[0][fVagos] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка банды Vagos: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31502,7 +31235,7 @@ CMD:gbankwithdraw(playerid, params[])
 		if(FracBank[0][fGrove] < params[0]) { SCM(playerid, COLOR_GREY, " В банке банды Grove нет столько денег"); return true; }
 		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
 		FracBank[0][fGrove] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка банды Grove: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31512,7 +31245,7 @@ CMD:gbankwithdraw(playerid, params[])
 		if(FracBank[0][fAztek] < params[0]) { SCM(playerid, COLOR_GREY, " В банке банды Aztec нет столько денег"); return true; }
 		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
 		FracBank[0][fAztek] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка банды Aztec: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31522,7 +31255,7 @@ CMD:gbankwithdraw(playerid, params[])
 		if(FracBank[0][fRifa] < params[0]) { SCM(playerid, COLOR_GREY, " В банке банды Rifa нет столько денег"); return true; }
 		if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильный количество денег!"); return true; }
 		FracBank[0][fRifa] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка банды Rifa: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31538,41 +31271,41 @@ CMD:gbankput(playerid, params[])
 	{
 	case 15:
 		{
-			if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+			if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 			FracBank[0][fGrove] += params[0];
-			pData[playerid][pCash] -= params[0];
+			GiveMoney(playerid, -params[0]);
 			format(cString, sizeof(cString), " Вы положили в банк Grove: %i вирт", params[0]);
 			SCM(playerid, 0x6495EDFF, cString);
 		}
 	case 12:
 		{
-			if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+			if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 			FracBank[0][fBallas] += params[0];
-			pData[playerid][pCash] -= params[0];
+			GiveMoney(playerid, -params[0]);
 			format(cString, sizeof(cString), " Вы положили в банк Ballas: %i вирт", params[0]);
 			SCM(playerid, 0x6495EDFF, cString);
 		}
 	case 13:
 		{
-			if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+			if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 			FracBank[0][fVagos] += params[0];
-			pData[playerid][pCash] -= params[0];
+			GiveMoney(playerid, -params[0]);
 			format(cString, sizeof(cString), " Вы положили в банк Vagos: %i вирт", params[0]);
 			SCM(playerid, 0x6495EDFF, cString);
 		}
 	case 17:
 		{
-			if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+			if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 			FracBank[0][fAztek] += params[0];
-			pData[playerid][pCash] -= params[0];
+			GiveMoney(playerid, -params[0]);
 			format(cString, sizeof(cString), " Вы положили в банк Aztec: %i вирт", params[0]);
 			SCM(playerid, 0x6495EDFF, cString);
 		}
 	case 18:
 		{
-			if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+			if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 			FracBank[0][fRifa] += params[0];
-			pData[playerid][pCash] -= params[0];
+			GiveMoney(playerid, -params[0]);
 			format(cString, sizeof(cString), " Вы положили в банк Rifa: %i вирт", params[0]);
 			SCM(playerid, 0x6495EDFF, cString);
 		}
@@ -31599,25 +31332,25 @@ CMD:newsput(playerid, params[])
 	if(params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильное количество денег!"); return true; }
 	if(pData[playerid][pMember] == 9)
 	{
-		if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
+		if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
 		FracBank[0][fSfnews] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, 72, "Вы положили на банк SF News %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
 	else if(pData[playerid][pMember] == 16)
 	{
-		if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
+		if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
 		FracBank[0][fLsnews] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, 72, "Вы положили на банк LS NEWS %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
 	else if(pData[playerid][pMember] == 20)
 	{
-		if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
+		if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " Недостаточно денег"); return true; }
 		FracBank[0][fLvnews] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, 72, "Вы положили на банк LV NEWS %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31635,7 +31368,7 @@ CMD:newswithdraw(playerid, params[])
 		if(FracBank[0][fSfnews] == 0) { SCM(playerid, COLOR_GREY, " В банке SF NEWS нет денег"); return true; }
 		if(FracBank[0][fSfnews] < params[0]) { SCM(playerid, COLOR_GREY, " В банке SF NEWS нет столько денег"); return true; }
 		FracBank[0][fSfnews] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		pData[playerid][pPLimitBank] +=params[0];
 		format(cString, 72, " Вы сняли с банка SF NEWS: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
@@ -31645,7 +31378,7 @@ CMD:newswithdraw(playerid, params[])
 		if(FracBank[0][fLsnews] == 0) { SCM(playerid, COLOR_GREY, " В банке LS NEWS нет денег"); return true; }
 		if(FracBank[0][fLsnews] < params[0]) { SCM(playerid, COLOR_GREY, " В банке LS NEWS нет столько денег"); return true; }
 		FracBank[0][fLsnews] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		pData[playerid][pPLimitBank] +=params[0];
 		format(cString, 72, " Вы сняли с банка LS NEWS: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
@@ -31655,7 +31388,7 @@ CMD:newswithdraw(playerid, params[])
 		if(FracBank[0][fLvnews] == 0) { SCM(playerid, COLOR_GREY, " В банке LV NEWS нет денег"); return true; }
 		if(FracBank[0][fLvnews] < params[0]) { SCM(playerid, COLOR_GREY, " В банке LV NEWS нет столько денег"); return true; }
 		FracBank[0][fLvnews] -= params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		pData[playerid][pPLimitBank] +=params[0];
 		format(cString, 72, " Вы сняли с банка LV NEWS: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
@@ -31690,7 +31423,7 @@ CMD:mafiawithdraw(playerid, params[])
 		if(MafiaBank[0][nYakuza] < params[0]) { SCM(playerid, COLOR_GREY, " В банке мафии Yakuza нет столько денег"); return true; }
 		MafiaBank[0][nYakuza] -= params[0];
 		pData[playerid][pPLimitBank] += params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка мафии Yakuza: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31700,7 +31433,7 @@ CMD:mafiawithdraw(playerid, params[])
 		if(MafiaBank[0][nRm] < params[0]) { SCM(playerid, COLOR_GREY, " В банке Русской мафии нет столько денег"); return true; }
 		MafiaBank[0][nRm] -= params[0];
 		pData[playerid][pPLimitBank] += params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка Русской мафии: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31710,7 +31443,7 @@ CMD:mafiawithdraw(playerid, params[])
 		if(MafiaBank[0][nLcn] < params[0]) { SCM(playerid, COLOR_GREY, " В банке мафии LCN нет столько денег"); return true; }
 		MafiaBank[0][nLcn] -= params[0];
 		pData[playerid][pPLimitBank] += params[0];
-		pData[playerid][pCash] +=params[0];
+		GiveMoney(playerid, params[0]);
 		format(cString, sizeof(cString), " Вы сняли с банка мафии LCN: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31722,25 +31455,25 @@ CMD:mafiabank(playerid, params[])
 	if(pData[playerid][pLogin] == false) return true;
 	if(pData[playerid][pLeader] == 6 || pData[playerid][pLeader] == 14 || pData[playerid][pLeader] == 5)
 	if(sscanf(params, "d", params[0])) return SCM(playerid, COLOR_WHITE, " Введите: /mafiabank [количество]");
-	if(params[0] < 1 || pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " Неправильное количество денег!"); return true; }
+	if(params[0] < 1 || GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " Неправильное количество денег!"); return true; }
 	if(pData[playerid][pMember] == 6)
 	{
 		MafiaBank[0][nYakuza] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, sizeof(cString), " Вы положили в банк мафии Yakuza: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
 	else if(pData[playerid][pMember] == 14)
 	{
 		MafiaBank[0][nRm] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, sizeof(cString), " Вы положили в банк Русской мафии: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
 	else if(pData[playerid][pMember] == 5)
 	{
 		MafiaBank[0][nLcn] += params[0];
-		pData[playerid][pCash] -=params[0];
+		GiveMoney(playerid, -params[0]);
 		format(cString, sizeof(cString), " Вы положили в банк мафии LCN: %i вирт", params[0]);
 		SCM(playerid, 0x6495EDFF, cString);
 	}
@@ -31775,7 +31508,7 @@ CMD:materials(playerid, params[])
 				if(!ProxDetectorS(8.0, playerid, giveplayerid)) return SCM(playerid, COLOR_GREY, " Игрок должен находиться рядом с вами");
 				if(!IsAMafia(giveplayerid)) return SCM(playerid,COLOR_GREY," Этот человек не в мафии");
 				if(price < 1 || price > 15) return SCM(playerid,COLOR_GREY," Нельзя меньше 1 и больше 15 вирт за материал");
-				if(pData[giveplayerid][pCash] < price*3000) return SCM(playerid,COLOR_GREY," У этого человека нет столько денег");
+				if(GetMoney(giveplayerid) < price*3000) return SCM(playerid,COLOR_GREY," У этого человека нет столько денег");
 				if(GetPlayerVehicleID(playerid) >= matsfura[0] && GetPlayerVehicleID(playerid) <= matsfura[4])
 				{
 					if(!MatsGang[tmpcar-matsfura[0]]) return SCM(playerid,COLOR_GREY, " В фургоне недостаточно материалов");
@@ -31814,13 +31547,14 @@ CMD:materials(playerid, params[])
 				if((pData[playerid][pMember] == 5 && !IsPlayerInRangeOfPoint(playerid, 40, 1445.2869,750.0549,10.8203)) ||
 						(pData[playerid][pMember] == 6 && !IsPlayerInRangeOfPoint(playerid, 40, 1463.6934,2773.0571,10.6719)) ||
 						(pData[playerid][pMember] == 14 && !IsPlayerInRangeOfPoint(playerid, 40, 955.7462,1721.6234,8.6484))) return SCM(playerid,COLOR_GREY," Вы должны находиться у мафии, которой хотите продать материалы");
-				if(pData[playerid][pCash] < MafiaMatsSellPrice[playerid]*3000) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+				if(GetMoney(playerid) < MafiaMatsSellPrice[playerid]*3000) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
 				switch(pData[playerid][pMember])
 				{
 				case 5:
 					{
-						pData[MafiaMatsSell[playerid]][pCash] += MafiaMatsSellPrice[playerid]*3000;
-						pData[playerid][pCash] -= MafiaMatsSellPrice[playerid]*3000;
+						GiveMoney(MafiaMatsSell[playerid], MafiaMatsSellPrice[playerid]*3000);
+						GiveMoney(playerid, -MafiaMatsSellPrice[playerid]*3000);
+
 						format(string,128," %s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000); // Форматируем сообщение
 						SendFamilyMessage(pData[playerid][pMember], 0x2A9170FF,string);
 						SendMes(MafiaMatsSell[playerid],COLOR_BLUE,"%s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000);
@@ -31830,8 +31564,9 @@ CMD:materials(playerid, params[])
 					}
 				case 6:
 					{
-						pData[MafiaMatsSell[playerid]][pCash] += MafiaMatsSellPrice[playerid]*3000;
-						pData[playerid][pCash] -= MafiaMatsSellPrice[playerid]*3000;
+			
+						GiveMoney(MafiaMatsSell[playerid], MafiaMatsSellPrice[playerid]*3000);
+						GiveMoney(playerid, -MafiaMatsSellPrice[playerid]*3000);
 						format(string,128," %s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000); // Форматируем сообщение
 						SendFamilyMessage(pData[playerid][pMember], 0x2A9170FF,string);
 						SendMes(MafiaMatsSell[playerid],COLOR_BLUE,"%s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000);
@@ -31841,8 +31576,8 @@ CMD:materials(playerid, params[])
 					}
 				case 14:
 					{
-						pData[MafiaMatsSell[playerid]][pCash] += MafiaMatsSellPrice[playerid]*3000;
-						pData[playerid][pCash] -= MafiaMatsSellPrice[playerid]*3000;
+						GiveMoney(MafiaMatsSell[playerid], MafiaMatsSellPrice[playerid]*3000);
+						GiveMoney(playerid, -MafiaMatsSellPrice[playerid]*3000);
 						format(string,128," %s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000); // Форматируем сообщение
 						SendFamilyMessage(pData[playerid][pMember], 0x2A9170FF,string);
 						SendMes(MafiaMatsSell[playerid],COLOR_BLUE,"%s купил 3000 материалов на общий склад мафии за [%i вирт]",Name(playerid),MafiaMatsSellPrice[playerid]*3000);
@@ -32009,8 +31744,7 @@ CMD:apanel(playerid, params[])
 	format(string, 48, "(9) Aztec\t\t\t %i $\n",FracBank[0][fAztek]); strcat(stringer, string);
 	format(string, 48, "(10) Rifa\t\t\t %i $\n",FracBank[0][fRifa]); strcat(stringer, string);
 	format(string, 48, "(12) LV News\t\t\t %i $\n",FracBank[0][fLvnews]); strcat(stringer, string);
-	format(string, 48, "(13) Mongols MC\t\t %i $\n",FracBank[0][fHamc]); strcat(stringer, string);
-	format(string, 48, "(14) Warlocks MC\t\t %i $\n",FracBank[0][fWmc]); strcat(stringer, string);
+
 	ShowPlayerDialog(playerid, 0, DIALOG_STYLE_MSGBOX,"Админ панель",stringer,"Готово", " ");
 	return true;
 }
@@ -32380,20 +32114,33 @@ CMD:setplayerskin(playerid, params[])
 CMD:pay(playerid, params[])
 {
 	if(pData[playerid][pLogin] == false) return true;
-	if(sscanf(params, "ud", params[0],params[1])) return	SCM(playerid, COLOR_WHITE, " Введите: /pay [id] [сумма]");
-	if(params[0] == playerid) return SCM(playerid,COLOR_GREY," Вы указали свой ID");
-	if(params[0] == INVALID_PLAYER_ID) return true;
-	if(params[1] > 1000 && pData[playerid][pLevel] < 1) return SCM(playerid, COLOR_GRAD1, " Нельзя передать меньше 1 вирта и больше 1000 вирт.");
-	if(params[1] < 1 || params[1] > 100000) return SCM(playerid, COLOR_GRAD1, " Нельзя передать меньше 1 вирта и больше 100000 вирт.");
-	if(pData[params[0]][pLevel] < 6 && pData[playerid][pLimitPay]+params[1] > 100000 && pData[playerid][pPayFlood] > gettime()) return SCM(playerid, COLOR_GRAD1, " Нельзя передать больше 50000 вирт в 5 минут");
-	if(!IsPlayerConnected(params[0]) || !pData[playerid][pLogin]) return SCM(playerid,COLOR_GREY," Игрок не найден");
-	if(!ProxDetectorS(5.0, playerid, params[0])) return SCM(playerid, COLOR_GRAD1, " Вы слишком далеко");
-	if(GetSRVMoney(playerid) < params[1]) return SCM(playerid,COLOR_GREY," У вас нет столько денег");
-	if(pData[playerid][pIp] == pData[params[0]][pIp] && pData[playerid][pLevel] < 3) return SCM(playerid,COLOR_GREY," Передавать деньги на твинк можно с 3-го уровня");
-	pData[params[0]][pCash] += params[1];
-	pData[playerid][pCash] -= params[1];
-	SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
-	SetAccountInfo(params[0], pData[params[0]][pCash], "pCash");
+	if(sscanf(params, "ud", params[0],params[1])) 
+		return	SCM(playerid, COLOR_WHITE, " Введите: /pay [id] [сумма]");
+
+	if(params[0] == playerid) 
+		return SCM(playerid,COLOR_GREY," Вы указали свой ID");
+
+	if(params[0] == INVALID_PLAYER_ID) 
+		return true;
+
+	if(params[1] < 1 || params[1] > 100000) 
+		return SCM(playerid, COLOR_GRAD1, " Нельзя передать меньше 1 вирта и больше 100000 вирт.");
+
+	if(pData[params[0]][pLevel] < 6 && pData[playerid][pLimitPay]+params[1] > 100000 && pData[playerid][pPayFlood] > gettime()) 
+		return SCM(playerid, COLOR_GRAD1, " Нельзя передать больше 50000 вирт в 5 минут");
+
+	if(!ProxDetectorS(5.0, playerid, params[0])) 
+		return SCM(playerid, COLOR_GRAD1, " Вы слишком далеко");
+
+	if(GetMoney(playerid) < params[1]) 
+		return SCM(playerid,COLOR_GREY," У вас нет столько денег");
+
+	if(pData[playerid][pIp] == pData[params[0]][pIp] && pData[playerid][pLevel] < 3) 
+		return SCM(playerid,COLOR_GREY," Передавать деньги на твинк можно с 3-го уровня");
+
+	GiveMoney(params[0], params[1]);
+	GiveMoney(playerid, -params[1]);
+
 	format(cString, 72, " Вы передали %s[%i] %i вирт",Name(params[0]),params[0],params[1]);
 	PlayerPlaySound(playerid, 1052, 0.0, 0.0, 0.0);
 	SCM(playerid, COLOR_GRAD1, cString);
@@ -32406,9 +32153,9 @@ CMD:pay(playerid, params[])
 	getdate(year, month, day);
 	MoneyLog(pData[playerid][pName],pData[params[0]][pName], params[1], "(-)Pay");
 	if(pData[playerid][pLevel] < 6) pData[playerid][pLimitPay] = params[1],pData[playerid][pPayFlood] = gettime()+300;
-	if(pData[params[0]][pLevel] < 2 && pData[params[0]][pCash] > 400000)
+	if(pData[params[0]][pLevel] < 2 && GetMoney(params[0]) > 400000)
 	{
-		format(string,256," <Warning> %s[%d]: Возможно bagouser. lvl = 1 | money = %i | donatemoney: %i",pData[params[0]][pName],params[0],pData[params[0]][pCash],pData[params[0]][pDonateAccount]);
+		format(string,256," <Warning> %s[%d]: Возможно bagouser. lvl = 1 | money = %i | donatemoney: %i",pData[params[0]][pName],params[0],GetMoney(params[0]),pData[params[0]][pDonateAccount]);
 		ABroadCast(COLOR_REDD,string,3);
 	}
 	return true;
@@ -32602,8 +32349,9 @@ CMD:setstat(playerid, params[])
 		}
 	case 15:
 		{
-			pData[giveplayerid][pCash] = amount;
-			format(string, 128, " Деньги изменены на: %i вирт", amount);
+			GiveMoney(giveplayerid, amount);
+
+			format(string, 128, " Деньги изменены на: %i вирт", GetMoney(giveplayerid));
 		}
 	case 16:
 		{
@@ -33345,8 +33093,8 @@ CMD:fight(playerid, params[])
 	if(pData[params[0]][pJob] == 6 || pData[playerid][pJob] == 6) return SCM(playerid,COLOR_GREY," Тренер не может участвовать в бою");
 	if(!GetPVarInt(params[0],"style_clothes")) return SCM(playerid,COLOR_GREY," Игрок должен находится в спортзале!");
 	if(params[1] < 1000 || params[1] > 10000) return SCM(playerid,COLOR_GREY," Ставка не должна быть меньше 1000 вирт и больше 10000 вирт");
-	if(pData[playerid][pCash] < params[1]) return SCM(playerid,COLOR_GREY," У вас  Недостаточно средств");
-	if(pData[params[0]][pCash] < params[1]) return SCM(playerid,COLOR_GREY," У игрока  Недостаточно средств");
+	if(GetMoney(playerid) < params[1]) return SCM(playerid,COLOR_GREY," У вас  Недостаточно средств");
+	if(GetMoney(params[0]) < params[1]) return SCM(playerid,COLOR_GREY," У игрока  Недостаточно средств");
 	SetPVarInt(params[0],"fight_offer",playerid+1), SetPVarInt(params[0],"fight_price",params[1]);
 	SendMes(playerid,0x6495EDFF," Вы предложили %s участвовать в бою. Ставка %i вирт",pData[params[0]][pName], params[1]);
 	return SendMes(params[0],0x6495EDFF,"%s предлагает тебе участвовать в бою. Ставка %i вирт (( /(ac)cept fight ))",pData[playerid][pName], params[1]);
@@ -33372,7 +33120,7 @@ CMD:startfight(playerid, params[])
 		TOTALSTYLELIST--;
 		return true;
 	}
-	if(pData[i][pCash] < StyleList[0][slPrice] || pData[ii][pCash] < StyleList[0][slPrice])
+	if(GetMoney(i) < StyleList[0][slPrice] || GetMoney(ii) < StyleList[0][slPrice])
 	{
 		SCM(playerid,COLOR_GREY," У игроков  Недостаточно средств");
 		for(new idx = 0; idx < TOTALSTYLELIST; idx++)
@@ -33390,8 +33138,9 @@ CMD:startfight(playerid, params[])
 	SetPlayerFacingAngle(ii,315);
 	SetPVarInt(i,"fight",playerid+1);
 	SetPVarInt(ii,"fight",playerid+1);
-	pData[i][pCash] -= StyleList[0][slPrice];
-	pData[ii][pCash] -= StyleList[0][slPrice];
+	GiveMoney(i, -StyleList[0][slPrice]);
+	GiveMoney(ii, -StyleList[0][slPrice]);
+
 	TogglePlayerControllable(i,false);
 	TogglePlayerControllable(ii,false);
 	SetTimerEx("StartFight" , 5000, false, "ii",i,ii);
@@ -33475,19 +33224,21 @@ CMD:bank(playerid, params[])
 		SCM(playerid, COLOR_WHITE, " Введите: /bank [Сумма]");
 		return SendMes(playerid,COLOR_WHITE," На вашем счету: %i вирт",pData[playerid][pBank]);
 	}
-	if(pData[playerid][pCash] < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
+	if(GetMoney(playerid) < params[0]) { SCM(playerid, COLOR_GREY, " У вас нет столько денег!"); return true; }
 	if(params[0] > 100000000 || params[0] < 1) { SCM(playerid, COLOR_GREY, " Неправильное количество денег!"); return true; }
 	SCM(playerid, COLOR_GRAD1, "---------===[ ЧЕК ]===---------");
 	format(cString, sizeof(cString), " Старый баланс: %i вирт", pData[playerid][pBank]);
 	SCM(playerid, COLOR_GREY, cString);
-	pData[playerid][pCash] -= params[0];
+
+	GiveMoney(playerid, -params[0]);
+	
 	pData[playerid][pBank] += params[0];
 	SetAccountInfo(playerid, pData[playerid][pBank], "pBank");
 	format(cString, 32, "Переведено: %i вирт", params[0]);
 	SCM(playerid, COLOR_GRAD4, cString);
 	format(cString, 32, "Новый баланс: %i вирт", pData[playerid][pBank]);
 	SCM(playerid, COLOR_WHITE, cString);
-	MoneyLog(pData[playerid][pName],"None", params[0], "(+)PutMoneyOnBank");
+	
 	return true;
 }
 CMD:whonear(playerid, params[])
@@ -33546,12 +33297,13 @@ CMD:withdraw(playerid, params[])
 	}
 	if(params[0] < 1 || params[0] > 100000000) { SCM(playerid, COLOR_GREY, " Нельзя снять 1 вирта и более 100000000!"); return true; }
 	if(pData[playerid][pBank] < params[0]) return SCM(playerid, COLOR_GRAD1, "  У вас нет столько денег!");
-	pData[playerid][pCash] += params[0];
+	GiveMoney(playerid, params[0]);
+
 	pData[playerid][pBank] -= params[0];
 	SetAccountInfo(playerid, pData[playerid][pBank], "pBank");
 	format(cString, 64, "Вы сняли %i вирт. Остаток: %i вирт",params[0], pData[playerid][pBank]);
 	SCM(playerid, COLOR_YELLOW, cString);
-	MoneyLog(pData[playerid][pName],"None", params[0], "(+)GetMoneyOfBank");
+
 	return true;
 }
 
@@ -33910,7 +33662,7 @@ CMD:divorce(playerid, params[])
 CMD:propose(playerid, params[])
 {
 	if(pData[playerid][pLogin] == false) return true;
-	if(pData[playerid][pCash] < 100000) return SCM(playerid, COLOR_GREY, " Вам нужно 100 000 на свадьбу!");
+	if(GetMoney(playerid) < 100000) return SCM(playerid, COLOR_GREY, " Вам нужно 100 000 на свадьбу!");
 	if(strcmp(pData[playerid][pMarriedTo],"-",true) != 0) return SCM(playerid, COLOR_GREY, " Вы уже женаты/замужем!");
 	if(sscanf(params, "u", params[0])) return SCM(playerid, COLOR_WHITE, " Введите: /propose [id]");
 	if(!IsPlayerConnected(params[0])) return true;
@@ -34083,7 +33835,7 @@ CMD:ticket(playerid, params[])
 	if(params[1] < 1 || params[1] > 10000) { SCM(playerid, COLOR_GREY, " Штраф не должен привышать 10000 и не должен быть меньше 0 вирт!"); return true; }
 	if(!IsPlayerConnected(params[0])) return true;
 	if(!ProxDetectorS(8.0, playerid, params[0])) return true;
-	if(GetSRVMoney(params[0]) < params[1]) 	return 	SCM(playerid, COLOR_GRAD1, " У этого  нет столько денег!");
+	if(GetMoney(params[0]) < params[1]) 	return 	SCM(playerid, COLOR_GRAD1, " У этого  нет столько денег!");
 	if(params[0] == playerid) { SCM(playerid, COLOR_GREY, " [Ошибка]  Вы указали свой ID"); return true; }
 	format(cString, sizeof(cString), " Вы выписали штраф в размере %i вирт %s. Причина: %s",params[1],Name(params[0]),params[2]);
 	SCM(playerid, COLOR_BLUE, cString);
@@ -36411,15 +36163,16 @@ CMD:get(playerid, params[])
 				if(BizzInfo[b][bProducts] <= 0 && strcmp(BizzInfo[b][bOwner],"None",true) != 0) return SCM(playerid,COLOR_GRAD1,"Заправка не работает");
 				if(BizzInfo[b][bLocked] == 1) return SCM(playerid,COLOR_GRAD1, " Заправка закрыта!");
 				if(pData[playerid][pFuel] != 0) return SCM(playerid, COLOR_GRAD1, " У вас уже есть канистра");
-				if(pData[playerid][pCash] < BizzInfo[b][bPrice]) return SCM(playerid,COLOR_GRAD1, " Не достаточно денег!");
+				if(GetMoney(playerid) < BizzInfo[b][bPrice]) return SCM(playerid,COLOR_GRAD1, " Не достаточно денег!");
 				BizzInfo[b][bTill] += BizzInfo[b][bPrice]/4;
 				BizzPay[b] += BizzInfo[b][bPrice]/4;
-				pData[playerid][pCash] -= BizzInfo[b][bPrice]/4;
+
+				GiveMoney(playerid, -BizzInfo[b][bPrice]/4);
 				if(strcmp(BizzInfo[b][bOwner],"None",true) != 0) BizzInfo[b][bProducts] -= 20;
 				format(string, 128, " Вы купили 50 литров бензина за %i вирт",BizzInfo[b][bPrice]/4);
 				SCM(playerid, 0x6495EDFF, string);
 				pData[playerid][pFuel] = 1;
-				pData[playerid][pCash] -= BizzInfo[b][bPrice]/4;
+				
 				return true;
 			}
 		}
@@ -36430,10 +36183,11 @@ CMD:get(playerid, params[])
 		new ammo;
 		if(sscanf( params, "d", ammo ) ) return SCM(playerid, COLOR_WHITE, " Введите: /get drugs [количество]");
 		if(!PlayerToPoint(3.0,playerid,322.1280,1118.8314,1083.8828)) return SCM(playerid, COLOR_GRAD1, " Вы не в притоне!");
-		if(pData[playerid][pCash] < ammo*20) return SCM(playerid,COLOR_GRAD1, " У вас недостаточно денег");
+		if(GetMoney(playerid) < ammo*20) return SCM(playerid,COLOR_GRAD1, " У вас недостаточно денег");
 		if(pData[playerid][pDrugs]+ammo >= 151) { SCM(playerid, COLOR_GREY, " Нельзя купить больше"); return true; }
 		if(ammo > 150 || ammo < 1) { SCM(playerid, COLOR_GREY, " Нельзя меньше 1 или больше 150!"); return true; }
-		pData[playerid][pCash] -= ammo*20;
+
+		GiveMoney(playerid, -ammo*20);
 		pData[playerid][pDrugs] += ammo;
 		format(string, 128, " Вы купили %i грамм наркотиков за %i вирт (У вас есть %i грамм)", ammo, ammo*20, pData[playerid][pDrugs]);
 		SCM(playerid, 0x6495EDFF, string);
@@ -36928,7 +36682,8 @@ CMD:givemoney(playerid, params[])
 	if(!IsPlayerConnected(params[0])) return true;
 	format(cString, sizeof(cString), " %i вирт переведены на счёт игроку", params[1]);
 	SCM(playerid, COLOR_WHITE, cString);
-	pData[params[0]][pCash] += params[1];
+	GiveMoney(params[0], params[1]);
+
 	return true;
 }
 CMD:money(playerid, params[])
@@ -37830,11 +37585,12 @@ CMD:fill(playerid)
 			if(BizzInfo[b][bProducts] < floatround(test)) return SCM(playerid,COLOR_GRAD1, " Заправка не работает"), BizzInfo[b][bProducts] = 0;
 			if(BizzInfo[b][bLocked] == 1) return SCM(playerid,COLOR_GRAD1, " Заправка закрыта");
 			new car = GetPlayerVehicleID(playerid);
-			if(pData[playerid][pCash] < BizzInfo[b][bPrice]) return SCM(playerid,COLOR_GRAD1, "  У вас нет столько денег");
+			if(GetMoney(playerid) < BizzInfo[b][bPrice]) return SCM(playerid,COLOR_GRAD1, "  У вас нет столько денег");
 			if(!IsPlayerInAnyVehicle(playerid) && pData[playerid][pState] == PLAYER_STATE_DRIVER || GetVehicleModel(car) == 481 || GetVehicleModel(car) == 509 || GetVehicleModel(car) == 510) return SCM(playerid,COLOR_YELLOW, " Вы не в автомобиле или этот транспорт нельзя заправить.");
 			BizzInfo[b][bTill] += BizzInfo[b][bPrice]/200*floatround(test);
 			BizzPay[b] += BizzInfo[b][bPrice]/200*floatround(test);
-			pData[playerid][pCash] -= BizzInfo[b][bPrice]/200*floatround(test);
+			GiveMoney(playerid, -BizzInfo[b][bPrice]/200*floatround(test));
+			
 			BizzInfo[b][bProducts] -= floatround(test);
 			car_data[car][fuell] = 200;
 			format(cString,64,"Вы дозаправили свой автомобиль за %i вирт",BizzInfo[b][bPrice]/200*floatround(test));
@@ -38287,7 +38043,7 @@ CMD:sellgrib(playerid, params[])
 		if(pData[playerid][pMushrooms] == 0) return SCM(playerid, COLOR_WHITE, " У вас нет грибов");
 		if (PlayerToPoint(10, playerid,BizzInfo[i][bBarX], BizzInfo[i][bBarY], BizzInfo[i][bBarZ]) && BizzInfo[i][bType] == 2 && GetPlayerVirtualWorld(playerid) == BizzInfo[i][bVirtualWorld])
 		{
-			pData[playerid][pCash] +=pData[playerid][pMushrooms]*25;
+			GiveMoney(playerid, pData[playerid][pMushrooms]*25);
 			BizzInfo[i][bProducts]+=pData[playerid][pMushrooms];
 			format(cString,64, "Вы продали %i грибов. Выручка: %i вирт",pData[playerid][pMushrooms],pData[playerid][pMushrooms]*25);
 			SCM(playerid,COLOR_WHITE,cString);
@@ -38320,7 +38076,7 @@ CMD:fixcar(playerid, const params[])
 	if(pData[playerid][pLogin] == false) return true;
 	if(pData[playerid][pPHouseKey] == INVALID_HOUSE_ID) return true;
 	if(GetPVarInt(playerid,"CarOffer") || CarOffer[playerid] != 9999) return true;
-	if(pData[playerid][pCash] < 1000) return SCM(playerid, COLOR_WHITE, " Не достаточно денег!");
+	if(GetMoney(playerid) < 1000) return SCM(playerid, COLOR_WHITE, " Не достаточно денег!");
 	if(IsVehicleOccupied(house_car[playerid]) != -1) return SCM(playerid,COLOR_GREY," Транспорт занят игроком");
 	new bool:null = false;
 	foreach(new i: Player) if(house_car[playerid] != -1 && GetPVarInt(i,"job_auto_seat") == house_car[playerid]) null = true;
@@ -38331,16 +38087,16 @@ CMD:fixcar(playerid, const params[])
 		DestroyHouseCars(playerid);
 		SpawnHouseCars(playerid);
 		GameTextForPlayer(playerid, "~g~car at your home~n~~r~$-1000", 5000, 1);
-		pData[playerid][pCash] -= 1000;
+		GiveMoney(playerid, -1000);
 		PlayerPlaySound(playerid, 1052, 0.0, 0.0, 0.0);
 	}
 	else if(pData[playerid][pKvartiraKey])
 	{
 		if(house_car[playerid] == -1) return SCM(playerid,COLOR_GREY," Автомобиль уже на парковке");
-		if(pData[playerid][pCash] < 2500) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+		if(GetMoney(playerid) < 2500) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
 		DestroyVehicleEX(house_car[playerid]);
 		house_car[playerid] = -1;
-		pData[playerid][pCash] -= 2500;
+		GiveMoney(playerid, -2500);
 		GameTextForPlayer(playerid, "~g~car at your entryway~n~~r~$-2500", 5000, 1);
 	}
 	return true;
@@ -38970,7 +38726,7 @@ CMD:sellekey(playerid, params[])
 	if(pData[playerid][pLogin] == false) return true;
 	if(sscanf(params, "udd", params[0],params[1])) return SCM(playerid, COLOR_WHITE, " Введите: /sellekey [playerid] [Цена]");
 	if(params[1] < 1 || params[1] > 20000) { SCM(playerid, COLOR_GREY, " Цена не может быть меньше 1 и больше 20000 вирт!"); return true; }
-	if(pData[params[0]][pCash] < params[1]) return SCM(playerid, COLOR_GREY, " У этого человека нет столько денег");
+	if(GetMoney(params[0]) < params[1]) return SCM(playerid, COLOR_GREY, " У этого человека нет столько денег");
 	if(pData[playerid][pKeys] < 1) { SCM(playerid, COLOR_GREY, " У вас нет ключей от камеры"); return true; }
 	if(!IsPlayerConnected(params[0])) return true;
 	if(!ProxDetectorS(8.0, playerid, params[0])) return SCM(playerid,COLOR_GREY," Рядом с вами никого нет");
@@ -39531,9 +39287,11 @@ CMD:accept(playerid, params[])
 	{
 		if(GetPVarInt(playerid,"Sell_Gun") <= 0) return SCM(playerid,COLOR_GREY," Вам не предлагали купить оружие!");
 		if(!ProxDetectorS(4.0, playerid, GetPVarInt(playerid,"Sell_GunId"))) return SCM(playerid, COLOR_GREY,"Игрок слишком далеко!");
-		if(pData[playerid][pCash] < GetPVarInt(playerid,"Sell_GunPrice")) return SCM(playerid,COLOR_GRAD1, " У вас недостаточно денег");
-		pData[playerid][pCash]-=GetPVarInt(playerid,"Sell_GunPrice");
-		pData[GetPVarInt(playerid,"Sell_GunId")][pCash]+=GetPVarInt(playerid,"Sell_GunPrice");
+		if(GetMoney(playerid) < GetPVarInt(playerid,"Sell_GunPrice")) return SCM(playerid,COLOR_GRAD1, " У вас недостаточно денег");
+
+		GiveMoney(playerid, -GetPVarInt(playerid,"Sell_GunPrice"));
+		GiveMoney(GetPVarInt(playerid,"Sell_GunId"), GetPVarInt(playerid,"Sell_GunPrice"));
+		
 		pData[GetPVarInt(playerid,"Sell_GunId")][pMats]-=GetPVarInt(playerid,"Sell_GunMats");
 		if(booston == 0) GivePlayerWeaponEx(playerid,GetPVarInt(playerid,"Sell_Gun"),GetPVarInt(playerid,"Sell_GunAmmo"));
 		else GivePlayerWeaponEx(playerid,GetPVarInt(playerid,"Sell_Gun"),GetPVarInt(playerid,"Sell_GunAmmo")*3);
@@ -39603,7 +39361,8 @@ CMD:accept(playerid, params[])
 		SCM(ProposeOffer[playerid], 0x6495EDFF, string);
 		strmid (pData[playerid][pMarriedTo],Name(ProposeOffer[playerid]), 0, strlen(Name(ProposeOffer[playerid])), 24);
 		strmid (pData[ProposeOffer[playerid]][pMarriedTo],Name(playerid), 0, strlen(Name(playerid)), 24);
-		pData[ProposeOffer[playerid]][pCash] -= 100000;
+		GiveMoney(ProposeOffer[playerid], -100000);
+		
 		ProposedTo[playerid] = 999;
 		ProposeOffer[playerid] = 999;
 	}
@@ -39611,7 +39370,7 @@ CMD:accept(playerid, params[])
 	{
 		if(!GetPVarInt(playerid,"fight_offer")) return SCM(playerid,COLOR_GREY," Никто не предлагал тебе участвовать в бою");
 		new i = GetPVarInt(playerid,"fight_offer")-1;
-		if(pData[i][pCash] < GetPVarInt(playerid,"fight_price") || pData[playerid][pCash] < GetPVarInt(playerid,"fight_price"))
+		if(GetMoney(i) < GetPVarInt(playerid,"fight_price") || GetMoney(playerid) < GetPVarInt(playerid,"fight_price"))
 		{
 			SCM(playerid,COLOR_GREY," У Игрока/Вас  Недостаточно средств");
 			DeletePVar(playerid,"fight_offer");
@@ -39673,15 +39432,16 @@ CMD:accept(playerid, params[])
 		SCM(playerid, COLOR_BLUE, string);
 		format(string, 128, " %s оплатил штраф в размере %i вирт.", Name(playerid), TicketMoney[playerid]);
 		SCM(TicketOffer[playerid], COLOR_BLUE, string);
-		pData[playerid][pCash] -=TicketMoney[playerid];
-		pData[TicketOffer[playerid]][pCash] +=TicketMoney[playerid];
+		GiveMoney(playerid, -TicketMoney[playerid]);
+		GiveMoney(TicketOffer[playerid], TicketMoney[playerid]);
+	
 		TicketOffer[playerid] = 999;
 		return TicketMoney[playerid] = 0;
 	}
 	else if(strcmp(x_job, "drugs",true) == 0)
 	{
 		if(DrugOffer[playerid] >= 999) return SCM(playerid, COLOR_GREY, " Вам никто не предлагал купить наркотики!");
-		if(pData[playerid][pCash] < DrugPrice[playerid]) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
+		if(GetMoney(playerid) < DrugPrice[playerid]) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег");
 		if(pData[playerid][pDrugs]+DrugGram[playerid] > 150) return SCM(playerid, COLOR_GREY, " У Вас и так достаточно наркотиков!");
 		if(pData[DrugOffer[playerid]][pDrugs] < DrugGram[playerid]) return SCM(playerid, COLOR_GREY, " У игрока нет столько наркотиков");
 		if(!IsPlayerConnected(DrugOffer[playerid]) || !pData[DrugOffer[playerid]][pLogin]) return SCM(playerid, COLOR_GREY, " Игрок оффлайн");
@@ -39689,8 +39449,10 @@ CMD:accept(playerid, params[])
 		SCM(playerid, 0x6495EDFF, string);
 		format(string, 128, " %s купил у вас %i грамм наркотиков за %i вирт",Name(playerid),DrugGram[playerid],DrugPrice[playerid]);
 		SCM(DrugOffer[playerid], 0x6495EDFF, string);
-		pData[playerid][pCash] -=DrugPrice[playerid];
+
+		GiveMoney(playerid, -DrugPrice[playerid]);
 		GiveMoney(DrugOffer[playerid], DrugPrice[playerid]);
+
 		pData[playerid][pDrugs] += DrugGram[playerid];
 		pData[DrugOffer[playerid]][pDrugs] -= DrugGram[playerid];
 		DrugOffer[playerid] = 999;
@@ -39771,7 +39533,7 @@ CMD:accept(playerid, params[])
 	{
 		if(ZoneOffer[playerid] >= 999) return SCM(playerid, COLOR_GREY, " Вам ни кто не предлагал территорию!");
 		if(!IsPlayerConnected(ZoneOffer[playerid]) || !pData[ZoneOffer[playerid]][pLogin]) return SCM(playerid,COLOR_GREY," Игрок оффлайн");
-		if(pData[playerid][pCash] < ZonePrice[playerid]) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег!");
+		if(GetMoney(playerid) < ZonePrice[playerid]) return SCM(playerid, COLOR_GREY, " У вас недостаточно денег!");
 		for(new i = 1; i <= TOTALGZ; i++)
 		{
 			if(PlayerToKvadrat(playerid,GZInfo[i][gCoords][0], GZInfo[i][gCoords][1],GZInfo[i][gCoords][2],GZInfo[i][gCoords][3]))
@@ -39788,8 +39550,10 @@ CMD:accept(playerid, params[])
 		SCM(playerid, 0x6495EDFF, string);
 		format(string, 128, " Вы продали территорию %s за %i вирт.",Name(playerid),ZonePrice[playerid]);
 		SCM(ZoneOffer[playerid], 0x6495EDFF, string);
-		pData[playerid][pCash] -= ZonePrice[playerid];
-		pData[ZoneOffer[playerid]][pCash]+= ZonePrice[playerid];
+
+		GiveMoney(playerid, -ZonePrice[playerid]);
+		GiveMoney(ZoneOffer[playerid], ZonePrice[playerid]);
+
 		ZoneOffer[playerid] = 999;
 		ZonePrice[playerid] = 0;
 		return sellzone[playerid] = 0;
@@ -39799,14 +39563,15 @@ CMD:accept(playerid, params[])
 		if(!GetPVarInt(playerid,"h_id")) return true;
 		new i = GetPVarInt(playerid,"h_id")-1;
 		if(!IsPlayerConnected(i)) return SCM(playerid,COLOR_GREY," Игрок не в сети"), DeletePVar(playerid,"h_id");
-		if(pData[playerid][pCash] < GetPVarInt(i,"h_price")) return SCM(playerid,COLOR_GREY," Недостаточно средств"), DeletePVar(playerid,"h_id");
+		if(GetMoney(playerid) < GetPVarInt(i,"h_price")) return SCM(playerid,COLOR_GREY," Недостаточно средств"), DeletePVar(playerid,"h_id");
 		UpdatePlayerHunger(playerid, 100);
 		SendMes(playerid,0x6495EDFF," Вы купили ХотДог у %s за %i вирт.",pData[i][pName],GetPVarInt(i,"h_price"));
 		SendMes(playerid,-1,"«Сытость» пополнена до %i",pData[playerid][pSatiety]);
 		ApplyAnimation(playerid, "FOOD", "EAT_Burger", 3.0, 0, 0, 0, 0, 0,1);
 		SetPlayerChatBubble(playerid,"съел(a) ХотДог",COLOR_PURPLE,30.0,10000);
 		SendMes(i,0x6495EDFF,"Вы продали ХотДог %s за %i вирт.",pData[playerid][pName],GetPVarInt(i,"h_price"));
-		pData[playerid][pCash] -= GetPVarInt(i,"h_price");
+		GiveMoney(playerid, -GetPVarInt(i,"h_price"));
+		
 		pData[i][pPayCheck] += GetPVarInt(i,"h_price")/2;
 		BizzInfo[GetPVarInt(i,"h_contract")][bTill] += GetPVarInt(i,"h_price")/2;
 		BizzPay[GetPVarInt(i,"h_contract")] += GetPVarInt(i,"h_price")/2;
@@ -39821,12 +39586,13 @@ CMD:accept(playerid, params[])
 	else if(strcmp(x_job, "ekey",true) == 0)
 	{
 		if(KeysOffer[playerid] >= 999) return SCM(playerid,COLOR_GREY," Вам никто не предлагал ключи");
-		if(pData[playerid][pCash] < KeysPrice[playerid]) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
+		if(GetMoney(playerid) < KeysPrice[playerid]) return SCM(playerid,COLOR_GREY," У вас недостаточно денег");
 		if(!IsPlayerConnected(KeysOffer[playerid]) || !pData[KeysOffer[playerid]][pLogin]) return SCM(playerid,COLOR_GREY," Игрок оффлайн");
 		format(string, 144, "%s передал(а) ключи от камеры %s", Name(KeysOffer[playerid]),Name(playerid));
 		ProxDetector(10.0, playerid, string,COLOR_PURPLE,COLOR_PURPLE,COLOR_PURPLE,COLOR_PURPLE,COLOR_PURPLE);
-		pData[playerid][pCash] -= KeysPrice[playerid];
-		pData[KeysOffer[playerid]][pCash] += KeysPrice[playerid];
+		GiveMoney(playerid, -KeysPrice[playerid]);
+		GiveMoney(KeysOffer[playerid], KeysPrice[playerid]);
+		
 		pData[playerid][pKeys]++;
 		pData[KeysOffer[playerid]][pKeys]--;
 		MoneyLog(pData[playerid][pName],Name(KeysOffer[playerid]), KeysPrice[playerid], "(-)BuyKey");
@@ -41481,16 +41247,21 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 	}
 	return false;
 }
-publics: GiveMoney(playerid, amount)
+stock GiveMoney(playerid, amount)
 {
+	ResetPlayerMoney(playerid);
 	pData[playerid][pCash] += amount;
 	GivePlayerMoney(playerid, amount);
+
+	new qyr_money[123];
+	format(qyr_money, sizeof(qyr_money), "INSERT INTO `money_logs` (Name, value, date) VALUES ('%s', '%d','%d')",Name(playerid), amount, gettime() );
+	mysql_query(DATABASE,qyr_money,false);
+
+
+	format(qyr_money, sizeof(qyr_money), "UPDATE `"TABLE_ACCOUNTS"` SET  `pCash` = '%i' WHERE Name = '%s' LIMIT 1", pData[playerid][pCash], Name(playerid));
+	mysql_query(DATABASE,qyr_money,false);
 }
-publics: ResetMoney(playerid)
-{
-	pData[playerid][pCash] = 0;
-	ResetPlayerMoney(playerid);
-}
+
 stock IsAnAmbulance(carid)
 {
 	if(carid >= medicssf[0] && carid <= medicssf[7] || carid == medmav || carid >= medicsls[0] && carid <= medicsls[5] || carid >= medicsls1[0] && carid <= medicsls1[5] || carid >= medicslv[0] && carid <= medicslv[8]) return true;
@@ -41528,19 +41299,7 @@ stock GetGangZoneColor(gangzonex)
 	}
 	return zx;
 }
-stock GetGZColorF(fnumber)
-{
-	new zx;
-	switch(fnumber)
-	{
-	case 12: zx = 0xFF0000AA;
-	case 13: zx = 0xFF0000AA;
-	case 15: zx = 0xFF0000AA;
-	case 17: zx = 0xFF0000AA;
-	case 18: zx = 0xFF0000AA;
-	}
-	return zx;
-}
+
 stock GetNearestVehicle(playerid)
 {
 	foreach(new i: Vehicle)
@@ -41554,11 +41313,7 @@ stock GetNearestVehicle(playerid)
 	}
 	return -1;
 }
-stock IsInAllowedF(fnumbers)
-{
-	for(new i =0;i<sizeof(allowedfactions);i++) if(fnumbers == allowedfactions[i]) return true;
-	return false;
-}
+
 stock GetGangName(fnumbwer)
 {
 	new str[30];
@@ -41689,24 +41444,7 @@ public OnVehicleSpawn(vehicleid)
 	if(car_pickup[vehicleid] > 0 && GetVehicleModel(vehicleid) != 433) Delete3DTextLabel(car_text[vehicleid]), DestroyDynamicPickup(car_pickup[vehicleid]), car_pickup[vehicleid] = 0;
 	if(Farmcar_pickup[vehicleid] > 0) Delete3DTextLabel(Farmcar_text[vehicleid]), DestroyDynamicPickup(Farmcar_pickup[vehicleid]), Farmcar_pickup[vehicleid] = 0;
 	if(Farmcar_pickup[vehicleid] > 0) Delete3DTextLabel(Farmcar_text[vehicleid]), DestroyDynamicPickup(Farmcar_pickup[vehicleid]), Farmcar_pickup[vehicleid] = 0;
-	if(vehicleid == hamccar[10])
-	{
-		bFuri[vehicleid-hamccar[10]][bHells][0] = 0; // Сбрасываем материалы
-		bFuri[vehicleid-hamccar[10]][bHells][2] = 0;  // Сбрасываем бензин
-		bFuri[vehicleid-hamccar[10]][bHells][1] = 0; // Сбрасываем алкоголь
-	}
-	else if(vehicleid == wmccar[10])
-	{
-		bFuri[vehicleid-wmccar[10]][bWarlocks][0] = 0; // Сбрасываем материалы
-		bFuri[vehicleid-wmccar[10]][bWarlocks][2] = 0;  // Сбрасываем бензин
-		bFuri[vehicleid-wmccar[10]][bWarlocks][1] = 0; // Сбрасываем алкоголь
-	}
-	else if(vehicleid == pmccar[10])
-	{
-		bFuri[vehicleid-pmccar[10]][bPagans][0] = 0; // Сбрасываем материалы
-		bFuri[vehicleid-pmccar[10]][bPagans][2] = 0;  // Сбрасываем бензин
-		bFuri[vehicleid-pmccar[10]][bPagans][1] = 0; // Сбрасываем алкоголь
-	}
+	
 	foreach(new i: Player)
 	{
 		if(tookmoped[i] == vehicleid && tookmoped[i] > 0) DestroyVehicleEX(tookmoped[i]), tookmoped[i] = 0;
@@ -41804,12 +41542,7 @@ stock IsAStuff1(gunid)
 	if(gunid >= 41 && gunid <= 43 ) return true;
 	return false;
 }
-stock GetSRVMoney(playerid) return pData[playerid][pCash];
 
-publics: GetMoney()
-{
-	foreach(new i: Player) if(pData[i][pCash] != GetPlayerMoney(i)) ResetPlayerMoney(i), GivePlayerMoney(i, pData[i][pCash]);
-}
 stock UnLockCar(playerid,carid)
 {
 	if(pData[playerid][pState] == PLAYER_STATE_DRIVER)
@@ -42998,11 +42731,12 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 		if(!BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet]) return SCM(playerid,COLOR_GREY," Ставка не установлена!");
 		if(GetPVarInt(playerid,"BoneStol_")) return SCM(playerid,COLOR_GREY," Ты уже поставил ставку!");
 		if(BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet] < 1000) return SCM(playerid,COLOR_GREY," Неверная ставка");
-		if(pData[playerid][pCash] < BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet]) return SCM(playerid,COLOR_GREY," Недостаточно средств!");
+		if(GetMoney(playerid) < BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet]) return SCM(playerid,COLOR_GREY," Недостаточно средств!");
 		if(BoneInfo[GetPVarInt(playerid,"BoneStol")-1][GameStart] > 0) return SCM(playerid,COLOR_GREY," Игра уже запущена!");
-		pData[playerid][pCash]-=BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet];
+		GiveMoney(playerid, -BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet]);
+
 		BoneInfo[GetPVarInt(playerid,"BoneStol")-1][bBank] += BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet];
-		MoneyLog(pData[playerid][pName],"None", BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet], "(-)BoneBet");
+
 		SetPVarInt(playerid,"BoneStol_",1);
 		SetPVarInt(playerid,"BoneBetMoney",BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet]);
 		UpdateBone(GetPVarInt(playerid,"BoneStol")-1);
@@ -43888,9 +43622,10 @@ publics: RouletCheck(idx)
 				{
 					switch(GetPVarInt(i,"RNumber_")) { case 1: null_ = 36; case 2: null_ = 8; case 4: null_ = 6; case 12: null_ = 3; case 18: null_ = 2; }
 					SendMes(i,COLOR_YELLOW," Выпало число %i. Вы выиграли %i вирт!",RouletNumber[idx], RouletBet[i]*null_);
-					pData[i][pCash]+=RouletBet[i]*null_;
+
+					GiveMoney(i, RouletBet[i]*null_);
 					SetPlayerChatBubble(i,"Выйграл",COLOR_LIGHTGREEN,30.0,3000);
-					MoneyLog(pData[i][pName],"None", RouletBet[i]*null_, "(+)RouletWin");
+		
 				}
 			}
 		}
@@ -43980,7 +43715,7 @@ stock UpdateBone(idx)
 			str = "";
 			format(strings,40,"Table:_%i",idx+1);
 			PlayerTextDrawSetString(i,PlayerBone[i][0],strings);
-			format(strings,128,"Bet:_%i~n~Bank:_%i~n~Money:_%i",BoneInfo[idx][Bet],BoneInfo[idx][bBank],pData[i][pCash]);
+			format(strings,128,"Bet:_%i~n~Bank:_%i~n~Money:_%i",BoneInfo[idx][Bet],BoneInfo[idx][bBank],GetMoney(i));
 			PlayerTextDrawSetString(i,PlayerBone[i][3],strings);
 			for(new i_ = 0; i_ < 5; i_++)
 			{
@@ -44009,10 +43744,10 @@ stock ExitBone(playerid)
 {
 	if(GetPVarInt(playerid,"BoneStol_") && BoneInfo[GetPVarInt(playerid,"BoneStol")-1][GameStart] <= 0)
 	{
-		pData[playerid][pCash]+=GetPVarInt(playerid,"BoneBetMoney");
-		SetAccountInfo(playerid, pData[playerid][pCash], "pCash");
+		GiveMoney(playerid, GetPVarInt(playerid,"BoneBetMoney"));
+
 		BoneInfo[GetPVarInt(playerid,"BoneStol")-1][bBank]-=BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet];
-		MoneyLog(pData[playerid][pName],"None", BoneInfo[GetPVarInt(playerid,"BoneStol")-1][Bet], "(+)ResetBoneBet");
+		
 		DeletePVar(playerid,"BoneBetMoney");
 	}
 	new idx = 0;
@@ -44070,8 +43805,9 @@ stock ShowItog(idx)
 			}
 		}
 		if(BoneInfo[idx][Crupie] != INVALID_PLAYER_ID) pData[BoneInfo[idx][Crupie]][pPayCheck]+=150;
-		MoneyLog(pData[itog[1]][pName],"None", BoneInfo[idx][bBank]-proc, "(+)moneyWinBone");
-		pData[itog[1]][pCash]+=BoneInfo[idx][bBank]-proc;
+
+		GiveMoney(itog[1], BoneInfo[idx][bBank]-proc);
+
 		BoneInfo[idx][GameStart] = 0;
 		BoneInfo[idx][Bet] = 0;
 		BoneInfo[idx][bBank] = 0;
@@ -44697,7 +44433,7 @@ publics: mysql_load_account(playerid)
 	}
 	/**/
 	if(GetPVarInt(playerid,"Fraction_Duty") && pData[playerid][pMember] != 0 && !IsAGang(playerid) && !IsAMafia(playerid)) pData[playerid][pSpawnChange] = 0;
-	if(pData[playerid][pCash] < 0) pData[playerid][pCash] = 0;
+	
 	if(CarInfo[playerid][carPercent][GetPVarInt(playerid,"chosencar")] <= 3 && CarInfo[playerid][carModel][GetPVarInt(playerid,"chosencar")] != 462) CarInfo[playerid][carPercent][GetPVarInt(playerid,"chosencar")] = 4;
 	if(pData[playerid][pDonateRank] > 0) SCM(playerid, 0xEAC700FF, " Здравствуйте VIP игрок!");
 	
@@ -44721,7 +44457,10 @@ publics: mysql_load_account(playerid)
 	pData[playerid][pLogin] = true;
 	SetAccountInfo(playerid,pData[playerid][pLogin],"pLogin");
 	SetAccountInfo(playerid,pData[playerid][pText],"pText");
-	
+
+	GivePlayerMoney(playerid, GetMoney(playerid));
+
+
 	if(Pick) SendClientMessage(playerid,0x3737FC00, " Внимание! Проходят выборы губернатора штата (Мэрия)!");
 	SpawnPlayer(playerid);
 
@@ -44941,7 +44680,8 @@ publics: OnMySQL_QUERY(idx, playerid, str[])
 
 					SCM(playerid,COLOR_GOLD," Поздравляем!");
 					SendMes(playerid,-1," Вы получаете приз ввиде %i вирт",qw);
-					pData[playerid][pCash] += qw;
+		
+					GiveMoney(playerid, qw);
 					format(format_string, 150, "UPDATE `ucp_drop_roulette` SET `use` = '1' WHERE `p_hash` = '%s'", pData[playerid][pRoolete]);
 					mysql_query(DATABASE,format_string);
 				}
@@ -45297,7 +45037,8 @@ publics: OnMySQL_QUERY(idx, playerid, str[])
 			{
 				if(pData[GetPlayerID(Nick)][pLogin])
 				{
-					pData[GetPlayerID(Nick)][pCash] += 100000;
+					GiveMoney(GetPlayerID(Nick), 100000);
+
 					pData[GetPlayerID(Nick)][pText] = 0;
 					return SCM(GetPlayerID(Nick), COLOR_GOLD, " Вы получили 100 000 вирт на банковский счет, за приглашённого друга");
 				}
@@ -45886,12 +45627,6 @@ stock SaveOthers()
 	mysql_query(DATABASE,szQuery);
 	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET bank_exchequer = '%i'",FracBank[0][fKazna]);
 	mysql_query(DATABASE,szQuery);
-	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET bank_hamc = '%i'",FracBank[0][fHamc]);
-	mysql_query(DATABASE,szQuery);
-	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET bank_wmc = '%i'",FracBank[0][fWmc]);
-	mysql_query(DATABASE,szQuery);
-	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET bank_pmc = '%i'",FracBank[0][fPmc]);
-	mysql_query(DATABASE,szQuery);
 	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET heal_ballas = '%i'",ballashel);
 	mysql_query(DATABASE,szQuery);
 	mysql_format(DATABASE, szQuery, 128, "UPDATE `"TABLE_OTHERS"` SET heal_grove = '%i'",groovhel);
@@ -46047,8 +45782,8 @@ stock SaveMySQL(idx, i = 0)
 			mysql_format(DATABASE, szQuery, sizeof(szQuery), "%s, `pSatiety` = '%i', `pDonateRank` = '%i', `pMats` = '%i', `pSex` = '%i', `pArrested` = '%i'",
 			szQuery, pData[i][pSatiety], pData[i][pDonateRank], pData[i][pMats], pData[i][pSex], pData[i][pArrested]);
 
-			mysql_format(DATABASE, szQuery, sizeof(szQuery), "%s, `pMuted` = '%i', `pCrimes` = '%i', `pExp` = '%f', `pCash` = '%i',`pAdmin` = '%i', `pPayCheck` = '%i', `pJailTime` = '%i', `pDrugs` = '%i', `pLeader` = '%i', `pMember` = '%i', `pQuestL` = '%i', `pQuest` = '%i', `pQuestP` = '%i', `pQuestF` = '%i', `pQuestPF` = '%i', `pQuestShow` = '%i'",
-			szQuery, pData[i][pMuted], pData[i][pCrimes], pData[i][pExp], pData[i][pCash],pData[i][pAdmin], pData[i][pPayCheck], pData[i][pJailTime], pData[i][pDrugs], pData[i][pLeader], pData[i][pMember], pData[i][pQuestL], pData[i][pQuest], pData[i][pQuestP], pData[i][pQuestF], pData[i][pQuestPF], pData[i][pQuestShow]);
+			mysql_format(DATABASE, szQuery, sizeof(szQuery), "%s, `pMuted` = '%i', `pCrimes` = '%i', `pExp` = '%f', `pAdmin` = '%i', `pPayCheck` = '%i', `pJailTime` = '%i', `pDrugs` = '%i', `pLeader` = '%i', `pMember` = '%i', `pQuestL` = '%i', `pQuest` = '%i', `pQuestP` = '%i', `pQuestF` = '%i', `pQuestPF` = '%i', `pQuestShow` = '%i'",
+			szQuery, pData[i][pMuted], pData[i][pCrimes], pData[i][pExp],pData[i][pAdmin], pData[i][pPayCheck], pData[i][pJailTime], pData[i][pDrugs], pData[i][pLeader], pData[i][pMember], pData[i][pQuestL], pData[i][pQuest], pData[i][pQuestP], pData[i][pQuestF], pData[i][pQuestPF], pData[i][pQuestShow]);
 
 			mysql_format(DATABASE, szQuery, sizeof(szQuery), "%s, `pRank` = '%i', `pJob` = '%i', `pModel` = '%i', `pPnumber` = '%i', `pDirectory` = '%i', `pVhoddata` = '%i', `pVhodMes` = '%i', `pVhodchas` = '%i', `pVhodminute` = '%i'",
 			szQuery, pData[i][pRank], pData[i][pJob], pData[i][pModel], pData[i][pPnumber], pData[i][pDirectory], pData[i][pVhoddata], pData[i][pVhodMes], pData[i][pVhodchas], pData[i][pVhodminute]);
@@ -47403,13 +47138,14 @@ stock GetPaintball()
 			{
 			case 0:
 				{
-					pData[null[1]][pCash]+=5000;
+					GiveMoney(null[1], 5000);
+					
 					GameTextForPlayer(null[1],"~g~+$5000", 5000, 1);
 					SCM(null[1], TEAM_AZTECAS_COLOR, " Поздравляем вы заняли 1-е место.");
 				}
 			default:
 				{
-					pData[null[1]][pCash]+=15000;
+					GiveMoney(null[1], 15000);
 					GameTextForPlayer(null[1],"~g~+$15000", 5000, 1);
 					SCM(null[1], TEAM_AZTECAS_COLOR, " Поздравляем вы заняли 1-е место.");
 				}
