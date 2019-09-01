@@ -27,6 +27,7 @@ native IsValidVehicle(vehicleid);
 #include "../source/maps/house_int_1.inc"
 
 #pragma dynamic 16000
+#pragma warning disable 214
 #pragma warning disable 239
 
 new bool:gPlayerAnimLibsPreloaded[MAX_PLAYERS];
@@ -16020,6 +16021,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				if(pData[playerid][pAdmin] > 6) return true;
 				format(string, 90, " <ALogin> вошел %s[%i]", pData[playerid][pName], playerid);
 				SendAdminMessage(0xF4B800AA, string);
+			//	EnableAntiCheatForPlayer(playerid, code, 0);
 				return true;
 			}
 			if(GetPVarInt(playerid, "Alogin") == 3)
@@ -16346,8 +16348,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				strmid(data, data, sid+5, strlen(data)-2, 32);
 			}
-			format(string, sizeof(string), "/tp %s", data);
-			CallLocalFunction("OnPlayerCommandText", "is", playerid, string);				
+			
+			cmd_tp(playerid, data);
+						
 		}
 		case DIALOG_DETACHMENT_BASE: // null
 		{
@@ -18241,7 +18244,9 @@ public OnPlayerEnterCheckpoint(playerid)
 	{
 		if(GetPVarInt(playerid,"job_auto") != GetVehicleModel(tmpcar)) return SCM(playerid,COLOR_BLUE," Это не та машина, которую мы заказывали!");
 		new cash;
-		if(AntiCheatGetVehicleHealth(tmpcar) < 700) return SCM(playerid,COLOR_BLUE," Нам не нужен металолом!");
+		new Float:health;
+    	GetVehicleHealth(tmpcar, health);
+		if(health < 700) return SCM(playerid,COLOR_BLUE," Нам не нужен металолом!");
 		for(new i = 0; i <= 19; i++) if(GetVehicleModel(tmpcar) == ShopCar[i][0]) cash = 500+(job_lvl(pData[playerid][job_skill][job_ugon])*7), give_job_exp(playerid, job_ugon, 2);
 		for(new i = 39; i <= 56; i++) if(GetVehicleModel(tmpcar) == ShopCar[i][0]) cash = 700+(job_lvl(pData[playerid][job_skill][job_ugon])*7), give_job_exp(playerid, job_ugon, 2);
 		for(new i = 20; i <= 38; i++) if(GetVehicleModel(tmpcar) == ShopCar[i][0]) cash = 900+(job_lvl(pData[playerid][job_skill][job_ugon])*7), give_job_exp(playerid, job_ugon, 2);
@@ -18968,7 +18973,10 @@ public OnPlayerEnterRaceCheckpoint(playerid)
 				}
 			case CHECKPOINT_64:
 				{
-					if (AntiCheatGetVehicleHealth(GetPlayerVehicleID(playerid)) >= 850)
+					new Float:health;
+    				GetVehicleHealth(GetPlayerVehicleID(playerid), health);
+
+					if (health >= 850)
 					{
 						SCM(playerid, COLOR_GREEN, " Припаркуйте автомобиль и пройдите в здание автошколы");
 						SetPVarInt(playerid,"givecarlic",1);
@@ -24517,6 +24525,25 @@ stock CheckTrailer(playerid)
 
 stock UpdatePlayer(playerid)
 {
+	new surf = GetPlayerSurfingVehicleID(playerid);
+	if(surf != INVALID_VEHICLE_ID)
+	{ // скидываем с крыши
+		new model = GetVehicleModel(surf);
+		if(model != 430 && model != 454 &&
+		model != 478 && model != 446 &&
+		model != 452 && model != 453 &&
+		model != 454 && model != 472 &&
+		model != 473 && model != 484 &&
+		model != 493 && model != 539 &&
+		model != 422 &&
+		model != 595) 
+		{
+			new Float:pos_x, Float:pos_y, Float:pos_z;
+			GetPlayerPos(playerid, pos_x,pos_y,pos_z);
+			SetPlayerPos(playerid, pos_x-1.5,pos_y,pos_z);
+		}
+	}
+
     new vehicleid = GetPlayerVehicleID(playerid);
     
     GetVehicleParamsEx(vehicleid,engine,lights,alarm,doors,bonnet,boot,objective);
@@ -24566,7 +24593,11 @@ stock UpdatePlayer(playerid)
 	{
 	    if(ServSecond % 2 ) // раз в две секунды
 		{
-			if(AntiCheatGetVehicleHealth(vehicleid) <= 500) {
+			new Float:health;
+    		GetVehicleHealth(vehicleid, health);
+
+			if(health < 500) 
+			{
 				PlayerTextDrawColor(playerid, RepairIcon[playerid], -741092488);
 			    PlayerTextDrawShow		(playerid, RepairIcon[playerid]);
 			}
@@ -24808,8 +24839,10 @@ stock UpdatePlayer(playerid)
 			//EngineStatus(GetPlayerVehicleID(SpecAd[playerid])
 			//new sobtest[20];
 			//format(sobtest,sizeof(sobtest),"~n~%s / %s",(ACCCheck[SpecAd[playerid]] == 10 ? ("On"):("Off")),(pData[SpecAd[playerid]][Rassa] == 16 ? ("On"):("Off")));
-			new Float:health = AntiCheatGetVehicleHealth(vehicleid) ;
-			
+
+			new Float:health;
+    		GetVehicleHealth(vehicleid, health);
+
 			new Float:aermor;
 			GetPlayerArmour(SpecAd[playerid],aermor);
 			//			new afktext[7];
@@ -25634,55 +25667,80 @@ stock ShowStats(playerid,targetid)
 	new jtext[20], drank[20];
 	switch(pData[targetid][pJob])
 	{
-	case 1: jtext = "Водитель автобуса"; case 2: jtext = "Механик"; case 3: jtext = "Продавец хотдогов";
-	case 4: jtext = "Таксист"; case 5: jtext = "Развозчик продуктов"; case 6: jtext = "Тренер";
-	case 8: jtext = "Инкассатор"; case 9: jtext = "Прораб"; case 99: jtext = "Дальнобойщик";
-	default: jtext = "Безработный";
+		case 1: jtext = "Водитель автобуса"; 
+		case 2: jtext = "Механик"; 
+		case 3: jtext = "Продавец хотдогов";
+		case 4: jtext = "Таксист"; 
+		case 5: jtext = "Развозчик продуктов"; 
+		case 6: jtext = "Тренер";
+		case 8: jtext = "Инкассатор"; 
+		case 9: jtext = "Прораб"; 
+		case 99: jtext = "Дальнобойщик";
+		default: jtext = "Безработный";
 	}
 	switch(pData[targetid][pLevel])
 	{
-	case 1: drank = "Новичок";
-	case 2..9: drank = "Освоившийся";
-	case 10..15: drank = "Постоянный игрок";
-	default: drank = "Дед";
+		case 1: drank = "Новичок";
+		case 2..9: drank = "Освоившийся";
+		case 10..15: drank = "Постоянный игрок";
+		default: drank = "Дед";
 	}
 	switch(pData[targetid][pDonateRank])
 	{
-	case 1: drank = "Start VIP";
-	case 2: drank = "Gold VIP";
-	case 3: drank = "Ultima VIP";
+		case 1: drank = "Start VIP";
+		case 2: drank = "Gold VIP";
+		case 3: drank = "Ultima VIP";
 	}
-	new str[128];
-	string = "";
-	format(str,128,"Имя:\t\t\t\t%s",pData[targetid][pName]), strcat(string,str);
-	format(str,128,"\n\nУровень:\t\t\t%i",pData[targetid][pLevel]), strcat(string,str);
-	format(str,128,"\nExp:\t\t\t\t%.0f/%i",pData[targetid][pExp], (pData[targetid][pLevel]+1)*4), strcat(string,str);
-	format(str,128,"\nДеньги:\t\t\t%i",GetMoney(targetid) ), strcat(string,str);
-	format(str,128,"\nТелефон:\t\t\t%i",pData[targetid][pPnumber]), strcat(string,str);
-	if(pData[targetid][punWarns] > Now())
-	{
-		format(str,128,"\nВарнов:\t\t\t%i",pData[targetid][pWarns]), strcat(string,str);
-		new year, month, day,hour,minute,second;
-		timestamp_to_date(pData[targetid][punWarns],year,month,day,hour,minute,second);
-		format(str,128,"\nВарн до:\t\t\t%02i/%02i/%02i %02i:%02i",day,month,year,hour,minute), strcat(string,str);
-	}
-	else strcat(string,"\nВарнов:\t\t\t0");
-	format(str,128,"\nЗаконопослушность:\t\t%i",pData[targetid][pZakonp]), strcat(string,str);
-	format(str,128,"\nПреступлений:\t\t%i",pData[targetid][pCrimes]), strcat(string,str);
-	format(str,128,"\nАрестов:\t\t\t%i",pData[targetid][pArrested]), strcat(string,str);
-	format(str,128,"\nУровень розыска:\t\t%i",pData[targetid][pWantedLevel]), strcat(string,str);
-	format(str,128,"\nДата регистрации:\t\t%s",pData[targetid][pDataReg]), strcat(string,str);
-	format(str,128,"\nЗависимость:\t\t\t%i",pData[targetid][pAddiction]), strcat(string,str);
-	format(str,128,"\nНаркотики:\t\t\t%i",pData[targetid][pDrugs]), strcat(string,str);
-	format(str,128,"\nМатериалы:\t\t\t%i",pData[targetid][pMats]), strcat(string,str);
-	format(str,128,"\nРыб поймано:\t\t\t%.1f кг",pData[targetid][pFishes]), strcat(string,str);
-	format(str,128,"\nОрганизация:\t\t\t%s",GetFraction(pData[targetid][pMember])), strcat(string,str);
-	format(str,128,"\nРанг:\t\t\t\t%s",GetRank(targetid)), strcat(string,str);
-	format(str,128,"\nРабота:\t\t\t%s",jtext), strcat(string,str);
-	format(str,128,"\nСтатус:\t\t\t\t%s",drank), strcat(string,str);
-	format(str,128,"\nЖена/Муж:\t\t\t%s",pData[targetid][pMarriedTo]), strcat(string,str);
-	format(str,128,"\nПол:\t\t\t\t%s",(pData[targetid][pSex] == 0)?("Мужчина") : ("Женщина")), strcat(string,str);
-	return ShowPlayerDialog(playerid,10004,DIALOG_STYLE_MSGBOX, "Статистика персонажа",string, "Готово", "");
+	new str[166],sctring[1450];
+	format(str,sizeof(str),"{9ACD32}_____________________________________________________________\n\n");
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Имя: \t\t\t\t\t{9ACD32}%s \n\n",Name(targetid));
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Уровень: \t\t\t\t{ffffff}%d \n",pData[targetid][pLevel]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Exp: \t\t\t\t\t{ffffff}%.0f / %d \n",pData[targetid][pExp], (pData[targetid][pLevel]+1)*4 );
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Пол: \t\t\t\t\t{ffffff}%s \n",(pData[targetid][pSex])?("Мужчина") : ("Женщина") );
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Статус: \t\t\t\t{ffffff}%s \n\n",drank);
+	strcat(sctring,str);
+	new year, month, day,hour,minute,second;
+	timestamp_to_date(pData[targetid][pDataReg],year,month,day,hour,minute,second);
+	format(str,sizeof(str),"\t{ffffff}Проживает с: \t\t\t\t{ffffff}%02i/%02i/%02i %02i:%02i \n",day,month,year,hour,minute);
+	strcat(sctring,str);
+	format(str,sizeof(str),"{9ACD32}_____________________________________________________________\n\n");
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Законопослушность: \t\t\t{ffffff}%d \n",pData[targetid][pZakonp]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Арестов: \t\t\t\t{ffffff}%d \n\n",pData[targetid][pArrested]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Варн(ов): \t\t\t\t{ffffff}%d/{FF6347}3 \n",pData[targetid][pWarns]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Уровень розыска: \t\t\t{ffffff}%d/{FF6347}6 \n",pData[targetid][pWantedLevel]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Наркозависимость: \t\t\t{ffffff}%d \n",pData[targetid][pAddiction]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Наркотики при себе: \t\t\t{ffffff}%d \n",pData[targetid][pDrugs]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Материалы при себе: \t\t{ffffff}%d \n",pData[targetid][pMats]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Рыбы поймано: \t\t\t{ffffff}%.1f кг \n",pData[targetid][pFishes]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"{9ACD32}_____________________________________________________________\n\n");
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Работа: \t\t\t\t{ffffff}%s \n",jtext);
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Организация: \t\t\t\t{ffffff}%s \n",GetFraction(pData[targetid][pMember]) );
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Ранг: \t\t\t\t\t{ffffff}%s \n\n",GetRank(targetid) ); ///
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Денег: \t\t\t\t{ffffff}%d{9ACD32} вирт \n",GetMoney(targetid));
+	strcat(sctring,str);
+	format(str,sizeof(str),"\t{ffffff}Телефон: \t\t\t\t{ffffff}%d \n",pData[targetid][pPnumber]);
+	strcat(sctring,str);
+	format(str,sizeof(str),"{9ACD32}_____________________________________________________________\n");
+	strcat(sctring,str);
+	return ShowPlayerDialog(playerid,10004,DIALOG_STYLE_MSGBOX, "Статистика персонажа",sctring, "Готово", "");
 }
 stock CheckQuest(playerid)
 {
@@ -33402,7 +33460,10 @@ CMD:en(playerid)
 			SCM(playerid, COLOR_GREEN, " {00A86B}Если у вас есть канистра с бензином, введите {FFFFFF}(( /fillcar ))");
 			return true;
 		}
-		if(AntiCheatGetVehicleHealth(vehicleid) <= 320) 
+		new Float:health;
+    	GetVehicleHealth(vehicleid, health);
+
+		if(health <= 320) 
 			return GameTextForPlayer(playerid,"~r~ENGINE HAS BROKENED", 5000, 3);
 
 		SetVehicleParamsEx(vehicleid,true,true,alarm,doors,bonnet,boot,objective);
@@ -36423,7 +36484,6 @@ CMD:hp(playerid, params[])
 		RepairVehicle(GetPlayerVehicleID(playerid));
 		car_data[GetPlayerVehicleID(playerid)][fuell]  = 200;
 		SCM(playerid, COLOR_WHITE, " Машина отремонтирована!");
-		SetPlayerHealth(playerid, 100.0);
 	}
 	SetPlayerHealth(playerid, 100.0);
 	return true;
@@ -41251,7 +41311,7 @@ stock GiveMoney(playerid, amount)
 {
 	ResetPlayerMoney(playerid);
 	pData[playerid][pCash] += amount;
-	GivePlayerMoney(playerid, amount);
+	GivePlayerMoney(playerid, pData[playerid][pCash]);
 
 	new qyr_money[123];
 	format(qyr_money, sizeof(qyr_money), "INSERT INTO `money_logs` (Name, value, date) VALUES ('%s', '%d','%d')",Name(playerid), amount, gettime() );
@@ -41950,7 +42010,10 @@ public OnVehicleDamageStatusUpdate(vehicleid, playerid)
 {
 	UdarPercent[playerid]++;
 
-	if(AntiCheatGetVehicleHealth(vehicleid)  > 0 && AntiCheatGetVehicleHealth(vehicleid)  <= 320)
+	new Float:health;
+    GetVehicleHealth(vehicleid, health);
+  
+	if(health  <= 320)
 	{
 		GameTextForPlayer(playerid,"~r~ENGINE HAS BROKENED", 5000, 3);
 		SetVehicleHealth(vehicleid, 310.0);
@@ -41961,7 +42024,7 @@ public OnVehicleDamageStatusUpdate(vehicleid, playerid)
 	{
 		MinusPercent[playerid] = 5;
 		if(CarInfo[playerid][carPercent][GetPVarInt(playerid,"chosencar")] <= 7) return true;
-		if(AntiCheatGetVehicleHealth(vehicleid)  > 900) --CarInfo[playerid][carPercent][GetPVarInt(playerid,"chosencar")];
+		if(health  > 900) --CarInfo[playerid][carPercent][GetPVarInt(playerid,"chosencar")];
 		UdarPercent[playerid] = 0;
 	}
 	if(IsTrailerAttachedToVehicle(GetPlayerVehicleID(playerid)) && loaded_type[playerid] != 0)
@@ -42554,8 +42617,9 @@ publics: OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
 		else if(ReconPlayer[17] == playertextid) return SetPlayerHealth(SpecAd[playerid], 10);
 		else if(ReconPlayer[18] == playertextid)
 		{
-
-			SetVehicleHealth(GetPlayerVehicleID(SpecAd[playerid]), AntiCheatGetVehicleHealth(GetPlayerVehicleID(SpecAd[playerid])) -10.0);
+			new Float:health;
+    		GetVehicleHealth(GetPlayerVehicleID(SpecAd[playerid]), health);
+			SetVehicleHealth(GetPlayerVehicleID(SpecAd[playerid]), health-10.0);
 			return true;
 		}
 		else if(ReconPlayer[19] == playertextid)
@@ -43004,7 +43068,10 @@ public OnPlayerWeaponShot(playerid, weaponid, hittype, hitid, Float:fX, Float:fY
 			foreach(new i: Player)
 			{
 				if(GetPlayerVehicleID(i) != hitid) continue;
-				if(AntiCheatGetVehicleHealth(hitid) > 0 &&AntiCheatGetVehicleHealth(hitid) <= 330)
+				new Float:health;
+    			GetVehicleHealth(GetPlayerVehicleID(i), health);
+
+				if(health <= 330)
 				{
 					GameTextForPlayer(i,"~r~ENGINE HAS BROKENED", 5000, 3);
 					SetVehicleHealth(hitid, 300.0);
