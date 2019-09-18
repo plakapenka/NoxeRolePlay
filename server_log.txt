@@ -1,0 +1,122 @@
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:10:11] 
+[14:10:11] Server Plugins
+[14:10:11] --------------
+[14:10:11]  Loading plugin: sscanf
+[14:10:11]   Failed.
+[14:10:11]  Loading plugin: TDE
+[14:10:11]   Failed.
+[14:10:11]  Loaded 0 plugins.
+
+[14:10:12] 
+[14:10:12] Filterscripts
+[14:10:12] ---------------
+[14:10:12]   Loading filterscript 'ntd.amx'...
+[14:10:12] 
+[NTD PL]Edytor TextDrawow od Nickk888 v4.45 Beta zostal pomyslnie zinicjalizowany!
+
+[14:10:12] [NTD ENG]The TextDraw editor from Nickk888 v4.45 Beta has been successfully initialized!
+
+[14:10:12]   Loading filterscript 'cameditor.amx'...
+[14:10:12] 
+--------------------------------------
+[14:10:12]  CamEditor by Drebin
+[14:10:12] --------------------------------------
+
+[14:10:12]   Loaded 2 filterscripts.
+
+[14:10:12]  
+[14:10:12] --------------------------------------
+[14:10:12]  Античит Nex-AC загружен!
+[14:10:12]  Версия античита: 1.9.47
+[14:10:12]  Автор: Nexius
+[14:10:12] --------------------------------------
+
+[14:10:12] AllowAdminTeleport() : function is deprecated. Please see OnPlayerClickMap()
+[14:10:12] 
+----------------------------------
+[14:10:12]   Bare Script
+
+[14:10:12] ----------------------------------
+
+[14:10:12] Number of vehicle models: 1
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:12:27] Error: Your password must be changed from the default password, please change it.
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:12:30] Error: Your password must be changed from the default password, please change it.
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:12:31] Error: Your password must be changed from the default password, please change it.
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:12:32] Error: Your password must be changed from the default password, please change it.
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:12:33] Error: Your password must be changed from the default password, please change it.
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[14:13:24] filterscripts = ""  (string)
+[14:13:24] 
+[14:13:24] Server Plugins
+[14:13:24] --------------
+[14:13:24]  Loaded 0 plugins.
+
+[14:13:24] 
+[14:13:24] Filterscripts
+[14:13:24] ---------------
+[14:13:24]   Loaded 0 filterscripts.
+
+[14:13:24] Script[gamemodes/noxe.amx]: Run time error 19: "File or function is not found"
+[14:13:24] Number of vehicle models: 0
